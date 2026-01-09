@@ -38,15 +38,14 @@ async function startBot() {
     }
 
     if (connection === 'close') {
-      const shouldReconnect =
-        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
-
-      if (shouldReconnect) {
-        console.log('Reconectando...')
+      const statusCode = lastDisconnect?.error?.output?.statusCode
+    
+      console.log('Conexão fechada. Código:', statusCode)
+    
+      // Aguarda 10 segundos antes de tentar de novo
+      setTimeout(() => {
         startBot()
-      } else {
-        console.log('Sessão encerrada.')
-      }
+      }, 10000)
     }
   })
 
