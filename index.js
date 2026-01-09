@@ -1,7 +1,18 @@
+import http from 'http'
 import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason
 } from '@whiskeysockets/baileys'
+
+// 🌐 PORTA OBRIGATÓRIA PARA O RENDER
+const PORT = process.env.PORT || 3000
+
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' })
+  res.end('Bot WhatsApp rodando ✅')
+}).listen(PORT, () => {
+  console.log(`Servidor HTTP ativo na porta ${PORT}`)
+})
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState('auth')
@@ -12,15 +23,18 @@ async function startBot() {
 
   sock.ev.on('creds.update', saveCreds)
 
-  // 🔑 AQUI TRATAMOS O QR CODE
   sock.ev.on('connection.update', (update) => {
     const { connection, qr, lastDisconnect } = update
 
     if (qr) {
       console.log('==============================')
-      console.log('ESCANEIE O QR CODE ABAIXO 👇')
+      console.log('QR CODE PARA CONECTAR 👇')
       console.log(qr)
       console.log('==============================')
+    }
+
+    if (connection === 'open') {
+      console.log('✅ WhatsApp conectado com sucesso!')
     }
 
     if (connection === 'close') {
@@ -34,13 +48,8 @@ async function startBot() {
         console.log('Sessão encerrada.')
       }
     }
-
-    if (connection === 'open') {
-      console.log('✅ WhatsApp conectado com sucesso!')
-    }
   })
 
-  // 📩 MENSAGENS
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0]
     if (!msg.message || msg.key.fromMe) return
