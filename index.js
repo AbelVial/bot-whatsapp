@@ -1,15 +1,46 @@
-import makeWASocket, { useMultiFileAuthState } from '@whiskeysockets/baileys'
+import makeWASocket, {
+  useMultiFileAuthState,
+  DisconnectReason
+} from '@whiskeysockets/baileys'
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState('auth')
 
   const sock = makeWASocket({
-    auth: state,
-    printQRInTerminal: true
+    auth: state
   })
 
   sock.ev.on('creds.update', saveCreds)
 
+  // 🔑 AQUI TRATAMOS O QR CODE
+  sock.ev.on('connection.update', (update) => {
+    const { connection, qr, lastDisconnect } = update
+
+    if (qr) {
+      console.log('==============================')
+      console.log('ESCANEIE O QR CODE ABAIXO 👇')
+      console.log(qr)
+      console.log('==============================')
+    }
+
+    if (connection === 'close') {
+      const shouldReconnect =
+        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
+
+      if (shouldReconnect) {
+        console.log('Reconectando...')
+        startBot()
+      } else {
+        console.log('Sessão encerrada.')
+      }
+    }
+
+    if (connection === 'open') {
+      console.log('✅ WhatsApp conectado com sucesso!')
+    }
+  })
+
+  // 📩 MENSAGENS
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0]
     if (!msg.message || msg.key.fromMe) return
