@@ -1,0 +1,11 @@
+{
+  "name": "bot-whatsapp",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.0"
+  }
+}
