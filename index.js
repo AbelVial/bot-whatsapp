@@ -273,10 +273,33 @@ async function startBot() {
             if (!msg.message || msg.key.fromMe) return
 
             const from = msg.key.remoteJid
-            const texto = msg.message.conversation ||
-                msg.message.extendedTextMessage?.text ||
-                msg.message.buttonsResponseMessage?.selectedButtonId ||
-                ''
+            const texto =
+    msg.message?.conversation ||
+    msg.message?.extendedTextMessage?.text ||
+    msg.message?.buttonsResponseMessage?.selectedButtonId ||
+    msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
+    ''
+
+            if (texto?.toUpperCase() === 'TESTE') {
+    return sock.sendMessage(from, {
+        listMessage: {
+            title: '🧪 MENU DE TESTE',
+            description: 'Selecione uma opção',
+            buttonText: 'Abrir opções',
+            sections: [
+                {
+                    title: 'Testes',
+                    rows: [
+                        { title: 'Teste A', rowId: 'teste_a' },
+                        { title: 'Teste B', rowId: 'teste_b' }
+                    ]
+                }
+            ]
+        }
+    })
+}
+
+            
             const listId =
                 msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId
 
