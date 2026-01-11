@@ -273,10 +273,13 @@ async function startBot() {
             if (!msg.message || msg.key.fromMe) return
 
             const from = msg.key.remoteJid
-            const texto = msg.message.conversation ||
-                msg.message.extendedTextMessage?.text ||
-                msg.message.buttonsResponseMessage?.selectedButtonId ||
-                ''
+            const texto =
+    msg.message?.conversation ||
+    msg.message?.extendedTextMessage?.text ||
+    msg.message?.buttonsResponseMessage?.selectedButtonId ||
+    msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
+    ''
+
 
             /* =========================
    TESTE SIMPLES (DEBUG)
