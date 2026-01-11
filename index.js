@@ -273,35 +273,10 @@ async function startBot() {
             if (!msg.message || msg.key.fromMe) return
 
             const from = msg.key.remoteJid
-            const texto =
-    msg.message?.conversation ||
-    msg.message?.extendedTextMessage?.text ||
-    msg.message?.buttonsResponseMessage?.selectedButtonId ||
-    msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
-    ''
-
-            if (texto?.toUpperCase() === 'TESTE') {
-    return sock.sendMessage(from, {
-        listMessage: {
-            title: '🧪 MENU DE TESTE',
-            description: 'Selecione uma opção',
-            buttonText: 'Abrir opções',
-            sections: [
-                {
-                    title: 'Testes',
-                    rows: [
-                        { title: 'Teste A', rowId: 'teste_a' },
-                        { title: 'Teste B', rowId: 'teste_b' }
-                    ]
-                }
-            ]
-        }
-    })
-}
-
-            
-            const listId =
-                msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId
+            const texto = msg.message.conversation ||
+                msg.message.extendedTextMessage?.text ||
+                msg.message.buttonsResponseMessage?.selectedButtonId ||
+                ''
 
             const estados = getJSONFile(ESTADOS_FILE)
 
@@ -367,46 +342,6 @@ async function startBot() {
                COMANDOS GLOBAIS (funcionam em qualquer etapa)
             ========================= */
 
-            // ===== MENU DE TESTE (DEBUG) =====
-if (texto.toUpperCase() === 'TESTE') {
-    estado.etapa = 'teste_menu'
-    saveJSONFile(ESTADOS_FILE, estados)
-
-    return sock.sendMessage(from, {
-        listMessage: {
-            title: '🧪 MENU DE TESTE',
-            description: 'Selecione uma opção para testar o clique',
-            buttonText: 'Abrir opções',
-            sections: [
-                {
-                    title: 'Testes',
-                    rows: [
-                        { title: 'Teste 1', rowId: 'teste_op_1' },
-                        { title: 'Teste 2', rowId: 'teste_op_2' },
-                        { title: 'Teste 3', rowId: 'teste_op_3' }
-                    ]
-                }
-            ]
-        }
-    })
-}
-
-            /* =========================
-   MENU DE TESTE - RESPOSTA
-========================= */
-
-if (estado.etapa === 'teste_menu' && listId) {
-    console.log('🧪 CLIQUE NO MENU DE TESTE:', listId)
-
-    estado.etapa = 'menu'
-    saveJSONFile(ESTADOS_FILE, estados)
-
-    return sock.sendMessage(from, {
-        text: `✅ Menu de teste funcionando!\n\nVocê clicou em:\n👉 *${listId}*`
-    })
-}
-
-            
             // Verificar comandos globais primeiro
             if (texto.toUpperCase() === 'MENU') {
                 estado.etapa = 'menu'
