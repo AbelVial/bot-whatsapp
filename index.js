@@ -209,7 +209,7 @@ async function startBot() {
 
     const sock = makeWASocket({
         logger: P({
-            level: 'debug'
+            level: 'silent'
         }),
         auth: state,
         printQRInTerminal: true,
@@ -273,46 +273,10 @@ async function startBot() {
             if (!msg.message || msg.key.fromMe) return
 
             const from = msg.key.remoteJid
-            const texto =
-    msg.message?.conversation ||
-    msg.message?.extendedTextMessage?.text ||
-    msg.message?.buttonsResponseMessage?.selectedButtonId ||
-    msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
-    ''
-
-
-            /* =========================
-   TESTE SIMPLES (DEBUG)
-========================= */
-
-if (texto?.toUpperCase() === 'TESTE') {
-    console.log('🧪 MENU LISTA ABERTO')
-
-    await sock.sendMessage(from, {
-    text: 'Escolha uma opção:',
-    buttons: [
-        { buttonId: 'op_1', buttonText: { displayText: 'Opção 1' }, type: 1 },
-        { buttonId: 'op_2', buttonText: { displayText: 'Opção 2' }, type: 1 }
-    ],
-    headerType: 1
-})
-}
-
-
-            const interactiveResponse =
-    msg.message?.interactiveResponseMessage
-        ?.nativeFlowResponseMessage?.paramsJson
-
-if (interactiveResponse) {
-    const data = JSON.parse(interactiveResponse)
-    console.log('🧪 CLIQUE MENU:', data)
-
-    return sock.sendMessage(from, {
-        text: `✅ Você clicou em: ${data.id}`
-    })
-}
-
-
+            const texto = msg.message.conversation ||
+                msg.message.extendedTextMessage?.text ||
+                msg.message.buttonsResponseMessage?.selectedButtonId ||
+                ''
 
             const estados = getJSONFile(ESTADOS_FILE)
 
