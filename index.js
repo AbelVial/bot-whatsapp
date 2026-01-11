@@ -288,28 +288,14 @@ async function startBot() {
 if (texto?.toUpperCase() === 'TESTE') {
     console.log('🧪 MENU LISTA ABERTO')
 
-    return sock.sendMessage(from, {
-        text: '🧪 *MENU DE TESTE*\n\nEscolha uma opção:',
-        footer: 'Teste Baileys',
-        buttonText: 'Abrir opções',
-        sections: [
-            {
-                title: 'Testes',
-                rows: [
-                    {
-                        title: 'Opção 1',
-                        rowId: 'op_1',
-                        description: 'Primeira opção de teste'
-                    },
-                    {
-                        title: 'Opção 2',
-                        rowId: 'op_2',
-                        description: 'Segunda opção de teste'
-                    }
-                ]
-            }
-        ]
-    })
+    await sock.sendMessage(from, {
+    text: 'Escolha uma opção:',
+    buttons: [
+        { buttonId: 'op_1', buttonText: { displayText: 'Opção 1' }, type: 1 },
+        { buttonId: 'op_2', buttonText: { displayText: 'Opção 2' }, type: 1 }
+    ],
+    headerType: 1
+})
 }
 
 
