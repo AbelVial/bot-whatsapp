@@ -703,7 +703,7 @@ async function startBot() {
 
                     default:
                         return sock.sendMessage(from, {
-                            text: '❌ *Opção inválida*\n\nDigite 1, 2, 3, 4, 5 ou ATENDENTE para falar com um atendente.'
+                            text: '❌ *Opção inválida*\n\n Menu ou ATENDENTE para falar com um atendente.'
                         })
                 }
             }
