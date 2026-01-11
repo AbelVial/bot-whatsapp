@@ -30,107 +30,88 @@ const HORARIO_ATENDIMENTO = {
 }
 
 const ATENDENTES = {
-    orcamento: process.env.ATENDENTE_ORCAMENTO,
-    acompanhamento: process.env.ATENDENTE_ACOMPANHAMENTO,
-    geral: process.env.ATENDENTE_GERAL,
-    whatsapp: process.env.WHATSAPP_CONTATO
+    orcamento: process.env.ATENDENTE_ORCAMENTO || "Atendente de Orçamento",
+    acompanhamento: process.env.ATENDENTE_ACOMPANHAMENTO || "Atendente de Acompanhamento",
+    geral: process.env.ATENDENTE_GERAL || "Atendente Geral",
+    whatsapp: process.env.WHATSAPP_CONTATO || "5511999999999"
 }
 
 /* =========================
-   BOTÕES E LISTAS DE SELEÇÃO
+   BOTÕES INTERATIVOS
 ========================= */
 
-const menuPrincipal = {
-    text: `📋 *MENU PRINCIPAL - CRIEARTES*\n\nComo podemos ajudar você hoje? 🤔`,
-    footer: 'Escolha uma opção abaixo:',
-    title: 'Menu CrieArtes',
-    buttonText: 'Abrir Menu',
-    sections: [{
-        title: '🎨 Serviços Disponíveis',
-        rows: [
-            { title: '📝 Fazer Orçamento', description: 'Solicite um orçamento personalizado', rowId: 'menu_orcamento' },
-            { title: '📦 Acompanhar Pedido', description: 'Consulte o status do seu pedido', rowId: 'menu_acompanhamento' },
-            { title: '👤 Falar com Atendente', description: 'Atendimento humano personalizado', rowId: 'menu_atendente' },
-            { title: 'ℹ️ Informações da Loja', description: 'Conheça mais sobre nós', rowId: 'menu_informacoes' },
-            { title: '🛒 Meu Carrinho', description: 'Ver produtos adicionados', rowId: 'menu_carrinho' }
-        ]
-    }]
+function criarBotoesMenu() {
+    return {
+        text: `📋 *MENU PRINCIPAL - CRIEARTES*\n\nComo podemos ajudar você hoje? 🤔\n\nEscolha uma opção abaixo:`,
+        buttons: [
+            { buttonId: 'menu_orcamento', buttonText: { displayText: '📝 Fazer Orçamento' }, type: 1 },
+            { buttonId: 'menu_acompanhamento', buttonText: { displayText: '📦 Acompanhar Pedido' }, type: 1 },
+            { buttonId: 'menu_atendente', buttonText: { displayText: '👤 Falar com Atendente' }, type: 1 },
+            { buttonId: 'menu_informacoes', buttonText: { displayText: 'ℹ️ Informações' }, type: 1 },
+            { buttonId: 'menu_carrinho', buttonText: { displayText: '🛒 Meu Carrinho' }, type: 1 }
+        ],
+        headerType: 1
+    }
 }
 
-const menuForaHorario = {
-    text: `🎯 *OPÇÕES DISPONÍVEIS FORA DO HORÁRIO*`,
-    footer: 'Escolha uma opção:',
-    title: 'Fora do Horário',
-    buttonText: 'Ver Opções',
-    sections: [{
-        title: '🕒 Opções Disponíveis',
-        rows: [
-            { title: '📋 Ver Catálogo', description: 'Nossos produtos disponíveis', rowId: 'fora_catalogo' },
-            { title: '📸 Visitar Instagram', description: '@cacrieartes', rowId: 'fora_instagram' },
-            { title: '📞 Falar com Atendente', description: 'Contato direto', rowId: 'fora_contato' },
-            { title: '🏠 Informações da Empresa', description: 'Sobre a CrieArtes', rowId: 'fora_empresa' }
-        ]
-    }]
+function criarBotoesForaHorario() {
+    return {
+        text: `🎯 *OPÇÕES DISPONÍVEIS FORA DO HORÁRIO*\n\nEscolha uma opção:`,
+        buttons: [
+            { buttonId: 'fora_catalogo', buttonText: { displayText: '📋 Ver Catálogo' }, type: 1 },
+            { buttonId: 'fora_instagram', buttonText: { displayText: '📸 Visitar Instagram' }, type: 1 },
+            { buttonId: 'fora_contato', buttonText: { displayText: '📞 Falar com Atendente' }, type: 1 },
+            { buttonId: 'fora_empresa', buttonText: { displayText: '🏠 Informações' }, type: 1 }
+        ],
+        headerType: 1
+    }
 }
 
-const menuCarrinho = (carrinhoLength = 0) => ({
-    text: `🛒 *OPÇÕES DO CARRINHO*\n\n${carrinhoLength} item(s) adicionado(s)`,
-    footer: 'Escolha uma ação:',
-    title: 'Meu Carrinho',
-    buttonText: 'Gerenciar Carrinho',
-    sections: [{
-        title: '📋 Ações Disponíveis',
-        rows: [
-            { title: '➕ Adicionar Mais Produtos', description: 'Continuar comprando', rowId: 'carrinho_adicionar' },
-            { title: '✏️ Editar/Remover Itens', description: 'Ajustar seu carrinho', rowId: 'carrinho_editar' },
-            { title: '💰 Finalizar Orçamento', description: 'Enviar para atendente', rowId: 'carrinho_finalizar' },
-            { title: '🗑️ Esvaziar Carrinho', description: 'Remover todos os itens', rowId: 'carrinho_esvaziar' },
-            { title: '🏠 Voltar ao Menu', description: 'Retornar ao menu principal', rowId: 'carrinho_voltar' }
-        ]
-    }]
-})
-
-const confirmarOrcamento = {
-    text: `✅ *CONFIRMAR ORÇAMENTO*`,
-    footer: 'Deseja finalizar e enviar para o atendente?',
-    title: 'Confirmar Orçamento',
-    buttonText: 'Confirmar',
-    sections: [{
-        title: '📋 Opções',
-        rows: [
-            { title: '✅ Sim, Confirmar', description: 'Enviar para atendente', rowId: 'confirmar_sim' },
-            { title: '✏️ Não, Ajustar', description: 'Continuar editando', rowId: 'confirmar_nao' },
-            { title: '🔄 Voltar', description: 'Retornar ao carrinho', rowId: 'confirmar_voltar' }
-        ]
-    }]
+function criarBotoesCarrinho(carrinhoLength = 0) {
+    return {
+        text: `🛒 *OPÇÕES DO CARRINHO*\n\n${carrinhoLength} item(s) adicionado(s)\n\nEscolha uma ação:`,
+        buttons: [
+            { buttonId: 'carrinho_adicionar', buttonText: { displayText: '➕ Adicionar Mais' }, type: 1 },
+            { buttonId: 'carrinho_editar', buttonText: { displayText: '✏️ Editar/Remover' }, type: 1 },
+            { buttonId: 'carrinho_finalizar', buttonText: { displayText: '💰 Finalizar' }, type: 1 },
+            { buttonId: 'carrinho_esvaziar', buttonText: { displayText: '🗑️ Esvaziar' }, type: 1 },
+            { buttonId: 'carrinho_voltar', buttonText: { displayText: '🏠 Voltar ao Menu' }, type: 1 }
+        ],
+        headerType: 1
+    }
 }
 
-const acompanharPedido = {
-    text: `📦 *ACOMPANHAMENTO DE PEDIDO*`,
-    footer: 'Informe o número do pedido ou escolha uma opção:',
-    title: 'Acompanhar Pedido',
-    buttonText: 'Consultar',
-    sections: [{
-        title: '📋 Opções',
-        rows: [
-            { title: '🔍 Novo Acompanhamento', description: 'Informar dados do pedido', rowId: 'acompanhar_novo' },
-            { title: '🏠 Voltar ao Menu', description: 'Retornar ao menu principal', rowId: 'acompanhar_voltar' }
-        ]
-    }]
+function criarBotoesConfirmacao() {
+    return {
+        text: `✅ *CONFIRMAR ORÇAMENTO*\n\nDeseja finalizar e enviar para o atendente?`,
+        buttons: [
+            { buttonId: 'confirmar_sim', buttonText: { displayText: '✅ Sim, Confirmar' }, type: 1 },
+            { buttonId: 'confirmar_nao', buttonText: { displayText: '✏️ Não, Ajustar' }, type: 1 },
+            { buttonId: 'confirmar_voltar', buttonText: { displayText: '🔄 Voltar' }, type: 1 }
+        ],
+        headerType: 1
+    }
 }
 
-const atendenteHumano = {
-    text: `👤 *ATENDIMENTO HUMANO - ${ATENDENTES.geral}*`,
-    footer: 'Descreva sua necessidade ou escolha uma opção:',
-    title: 'Atendimento Humano',
-    buttonText: 'Falar com Atendente',
-    sections: [{
-        title: '📞 Opções',
-        rows: [
-            { title: '📝 Descrever Necessidade', description: 'Fale sobre seu pedido/dúvida', rowId: 'atendente_descrever' },
-            { title: '🏠 Voltar ao Menu', description: 'Cancelar atendimento', rowId: 'atendente_voltar' }
-        ]
-    }]
+function criarBotoesAcompanhar() {
+    return {
+        text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\nInforme o número do pedido ou escolha uma opção:`,
+        buttons: [
+            { buttonId: 'acompanhar_novo', buttonText: { displayText: '🔍 Novo Acompanhamento' }, type: 1 },
+            { buttonId: 'acompanhar_voltar', buttonText: { displayText: '🏠 Voltar ao Menu' }, type: 1 }
+        ],
+        headerType: 1
+    }
+}
+
+function criarBotoesAtendente() {
+    return {
+        text: `👤 *ATENDIMENTO HUMANO - ${ATENDENTES.geral}*\n\nDescreva sua necessidade ou escolha uma opção:`,
+        buttons: [
+            { buttonId: 'atendente_voltar', buttonText: { displayText: '🏠 Voltar ao Menu' }, type: 1 }
+        ],
+        headerType: 1
+    }
 }
 
 /* =========================
@@ -294,15 +275,18 @@ function getSaudacao() {
     return '🌙 Boa noite! '
 }
 
-async function enviarListaSelecao(sock, from, listaConfig) {
+async function enviarBotoes(sock, from, configBotoes) {
     try {
-        await sock.sendMessage(from, listaConfig, { quoted: null })
+        await sock.sendMessage(from, configBotoes)
     } catch (error) {
-        console.error('Erro ao enviar lista de seleção:', error)
+        console.error('Erro ao enviar botões:', error)
         // Fallback para mensagem de texto
-        await sock.sendMessage(from, {
-            text: `${listaConfig.text}\n\nPor favor, responda com:\n\n${listaConfig.sections[0].rows.map((row, i) => `${i + 1}. ${row.title}`).join('\n')}`
-        })
+        const textoFallback = configBotoes.text + '\n\n' +
+            configBotoes.buttons.map(btn => 
+                `• ${btn.buttonText.displayText.replace(/[^a-zA-Z0-9\s]/g, '')}: digite "${btn.buttonId}"`
+            ).join('\n')
+        
+        await sock.sendMessage(from, { text: textoFallback })
     }
 }
 
@@ -354,7 +338,6 @@ async function startBot() {
                 setTimeout(() => startBot(), 5000)
             } else {
                 console.log('❌ Sessão finalizada. Escaneie o QR Code novamente.')
-                // Opcional: apagar pasta auth
                 try {
                     fs.rmSync('auth', { recursive: true, force: true })
                 } catch (e) {}
@@ -379,7 +362,6 @@ async function startBot() {
             const from = msg.key.remoteJid
             const texto = msg.message.conversation ||
                 msg.message.extendedTextMessage?.text ||
-                msg.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
                 msg.message.buttonsResponseMessage?.selectedButtonId ||
                 ''
 
@@ -401,7 +383,7 @@ async function startBot() {
             estado.ultimaInteracao = new Date().toISOString()
 
             // Log da interação
-            console.log(`\n📨 [${new Date().toLocaleTimeString('pt-BR')}] ${from.split('@')[0]}: ${texto.substring(0, 50)}...`)
+            console.log(`\n📨 [${new Date().toLocaleTimeString('pt-BR')}] ${from.split('@')[0]}: ${texto}`)
             console.log(`   Etapa: ${estado.etapa}, Carrinho: ${estado.carrinho.length} itens`)
 
             /* =========================
@@ -450,25 +432,25 @@ async function startBot() {
             if (texto.toUpperCase() === 'MENU') {
                 estado.etapa = 'menu'
                 saveJSONFile(ESTADOS_FILE, estados)
-                return enviarListaSelecao(sock, from, menuPrincipal)
+                return enviarBotoes(sock, from, criarBotoesMenu())
             }
 
             if (texto.toUpperCase() === 'ATENDENTE' || texto.toUpperCase() === 'AJUDA') {
                 estado.etapa = 'atendente_humano'
                 saveJSONFile(ESTADOS_FILE, estados)
-                return enviarListaSelecao(sock, from, atendenteHumano)
+                return enviarBotoes(sock, from, criarBotoesAtendente())
             }
 
             if (texto.toUpperCase() === 'CARRINHO') {
                 if (estado.carrinho.length === 0) {
                     return sock.sendMessage(from, {
-                        text: `🛒 *SEU CARRINHO ESTÁ VAZIO*\n\nPara adicionar produtos, escolha "Fazer Orçamento" no menu principal.\n\nEscolha uma opção:`
+                        text: `🛒 *SEU CARRINHO ESTÁ VAZIO*\n\nPara adicionar produtos, escolha "Fazer Orçamento" no menu principal.`
                     })
                 }
 
                 estado.etapa = 'carrinho'
                 saveJSONFile(ESTADOS_FILE, estados)
-                return enviarListaSelecao(sock, from, menuCarrinho(estado.carrinho.length))
+                return enviarBotoes(sock, from, criarBotoesCarrinho(estado.carrinho.length))
             }
 
             /* =========================
@@ -503,7 +485,7 @@ async function startBot() {
                 estado.etapa = 'menu_fora_horario'
                 saveJSONFile(ESTADOS_FILE, estados)
 
-                return enviarListaSelecao(sock, from, menuForaHorario)
+                return enviarBotoes(sock, from, criarBotoesForaHorario())
             }
 
             /* =========================
@@ -530,7 +512,7 @@ async function startBot() {
                                 `• Novos produtos\n` +
                                 `• Promoções especiais\n` +
                                 `• Dicas e inspirações\n\n` +
-                                `🏠 Escolha "Voltar" para retornar`
+                                `🏠 Digite MENU para voltar`
                         })
 
                     case 'fora_contato':
@@ -541,7 +523,7 @@ async function startBot() {
                                 `📱 ${ATENDENTES.whatsapp}\n\n` +
                                 `*Horário de resposta:*\n` +
                                 `${formatarHorarioAtendimento()}\n\n` +
-                                `🏠 Escolha "Voltar" para retornar`
+                                `🏠 Digite MENU para voltar`
                         })
 
                     case 'fora_empresa':
@@ -560,11 +542,11 @@ async function startBot() {
                                 `🎨 Criatividade\n` +
                                 `⚡ Agilidade\n` +
                                 `🤝 Atendimento personalizado\n\n` +
-                                `🏠 Escolha "Voltar" para retornar`
+                                `🏠 Digite MENU para voltar`
                         })
 
                     default:
-                        return enviarListaSelecao(sock, from, menuForaHorario)
+                        return enviarBotoes(sock, from, criarBotoesForaHorario())
                 }
             }
 
@@ -576,7 +558,7 @@ async function startBot() {
                 if (texto.toUpperCase() === 'VOLTAR' || texto.toUpperCase() === 'MENU') {
                     estado.etapa = 'menu_fora_horario'
                     saveJSONFile(ESTADOS_FILE, estados)
-                    return enviarListaSelecao(sock, from, menuForaHorario)
+                    return enviarBotoes(sock, from, criarBotoesForaHorario())
                 }
 
                 return sock.sendMessage(from, {
@@ -585,7 +567,7 @@ async function startBot() {
                         `📱 ${ATENDENTES.whatsapp}\n\n` +
                         `*Horário de atendimento:*\n` +
                         `${formatarHorarioAtendimento()}\n\n` +
-                        `🔄 Escolha "Voltar" para retornar ao menu`
+                        `🔄 Digite VOLTAR para retornar`
                 })
             }
 
@@ -614,7 +596,7 @@ async function startBot() {
                 estado.etapa = 'menu'
                 saveJSONFile(ESTADOS_FILE, estados)
 
-                return enviarListaSelecao(sock, from, menuPrincipal)
+                return enviarBotoes(sock, from, criarBotoesMenu())
             }
 
             /* =========================
@@ -647,18 +629,18 @@ async function startBot() {
                             pedidosCliente.forEach(pedido => {
                                 textoPedidos += `• ${pedido.id} - ${new Date(pedido.data).toLocaleDateString('pt-BR')}\n`
                             })
-                            textoPedidos += `\nDigite o número do pedido ou escolha uma opção abaixo:`
+                            textoPedidos += `\nDigite o número do pedido ou escolha uma opção:`
                         }
 
-                        return enviarListaSelecao(sock, from, {
-                            ...acompanharPedido,
-                            text: acompanharPedido.text + (textoPedidos ? `\n\n${textoPedidos}` : '')
+                        return enviarBotoes(sock, from, {
+                            ...criarBotoesAcompanhar(),
+                            text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\nPara consultar o status do seu pedido, informe:\n\n🔢 *Número do pedido* (ex: PED240101001)\n\n👤 *Atendente:* ${ATENDENTES.acompanhamento}\n${textoPedidos}`
                         })
 
                     case 'menu_atendente':
                         estado.etapa = 'atendente_humano'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, atendenteHumano)
+                        return enviarBotoes(sock, from, criarBotoesAtendente())
 
                     case 'menu_informacoes':
                         return sock.sendMessage(from, {
@@ -676,7 +658,7 @@ async function startBot() {
                                 `📱 WhatsApp: ${ATENDENTES.whatsapp}\n` +
                                 `📧 E-mail: contato@crieartes.com\n\n` +
                                 `🕘 *Horário:*\n${formatarHorarioAtendimento()}\n\n` +
-                                `🏠 Escolha "Voltar" para retornar`
+                                `🏠 Digite MENU para voltar`
                         })
 
                     case 'menu_carrinho':
@@ -688,10 +670,10 @@ async function startBot() {
 
                         estado.etapa = 'carrinho'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuCarrinho(estado.carrinho.length))
+                        return enviarBotoes(sock, from, criarBotoesCarrinho(estado.carrinho.length))
 
                     default:
-                        return enviarListaSelecao(sock, from, menuPrincipal)
+                        return enviarBotoes(sock, from, criarBotoesMenu())
                 }
             }
 
@@ -709,14 +691,14 @@ async function startBot() {
                             `📧 E-mail utilizado na compra\n` +
                             `📱 Seu telefone\n\n` +
                             `*Atendente:* ${ATENDENTES.acompanhamento}\n` +
-                            `🔄 Escolha "Voltar" para cancelar`
+                            `🔄 Digite VOLTAR para cancelar`
                     })
                 }
 
                 if (texto === 'acompanhar_voltar') {
                     estado.etapa = 'menu'
                     saveJSONFile(ESTADOS_FILE, estados)
-                    return enviarListaSelecao(sock, from, menuPrincipal)
+                    return enviarBotoes(sock, from, criarBotoesMenu())
                 }
 
                 // Buscar pedido
@@ -781,7 +763,7 @@ async function startBot() {
                 if (texto === 'atendente_voltar') {
                     estado.etapa = 'menu'
                     saveJSONFile(ESTADOS_FILE, estados)
-                    return enviarListaSelecao(sock, from, menuPrincipal)
+                    return enviarBotoes(sock, from, criarBotoesMenu())
                 }
 
                 // Encaminha para o atendente humano
@@ -849,8 +831,8 @@ async function startBot() {
                 estado.etapa = 'carrinho'
                 saveJSONFile(ESTADOS_FILE, estados)
 
-                return enviarListaSelecao(sock, from, {
-                    ...menuCarrinho(estado.carrinho.length),
+                return enviarBotoes(sock, from, {
+                    ...criarBotoesCarrinho(estado.carrinho.length),
                     text: `✅ *Produto adicionado ao carrinho!*\n\n${resumoCarrinho(estado.carrinho)}\n\nEscolha uma ação:`
                 })
             }
@@ -872,7 +854,7 @@ async function startBot() {
                         if (estado.carrinho.length === 0) {
                             estado.etapa = 'carrinho'
                             saveJSONFile(ESTADOS_FILE, estados)
-                            return enviarListaSelecao(sock, from, menuCarrinho(0))
+                            return enviarBotoes(sock, from, criarBotoesCarrinho(0))
                         }
 
                         estado.etapa = 'editar_carrinho'
@@ -893,24 +875,24 @@ async function startBot() {
 
                         estado.etapa = 'confirmar_orcamento'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, {
-                            ...confirmarOrcamento,
-                            text: `${resumoCarrinho(estado.carrinho)}\n\n${confirmarOrcamento.text}`
+                        return enviarBotoes(sock, from, {
+                            ...criarBotoesConfirmacao(),
+                            text: `${resumoCarrinho(estado.carrinho)}\n\n✅ *CONFIRMAR ORÇAMENTO*\n\nDeseja finalizar e enviar para o atendente *${ATENDENTES.orcamento}*?`
                         })
 
                     case 'carrinho_esvaziar':
                         estado.carrinho = []
                         estado.etapa = 'menu'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuPrincipal)
+                        return enviarBotoes(sock, from, criarBotoesMenu())
 
                     case 'carrinho_voltar':
                         estado.etapa = 'menu'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuPrincipal)
+                        return enviarBotoes(sock, from, criarBotoesMenu())
 
                     default:
-                        return enviarListaSelecao(sock, from, menuCarrinho(estado.carrinho.length))
+                        return enviarBotoes(sock, from, criarBotoesCarrinho(estado.carrinho.length))
                 }
             }
 
@@ -922,7 +904,7 @@ async function startBot() {
                 if (texto.toUpperCase() === 'VOLTAR') {
                     estado.etapa = 'carrinho'
                     saveJSONFile(ESTADOS_FILE, estados)
-                    return enviarListaSelecao(sock, from, menuCarrinho(estado.carrinho.length))
+                    return enviarBotoes(sock, from, criarBotoesCarrinho(estado.carrinho.length))
                 }
 
                 const i = parseInt(texto) - 1
@@ -937,8 +919,8 @@ async function startBot() {
                 estado.etapa = 'carrinho'
                 saveJSONFile(ESTADOS_FILE, estados)
 
-                return enviarListaSelecao(sock, from, {
-                    ...menuCarrinho(estado.carrinho.length),
+                return enviarBotoes(sock, from, {
+                    ...criarBotoesCarrinho(estado.carrinho.length),
                     text: `🗑️ *ITEM REMOVIDO:* ${itemRemovido}\n\n${resumoCarrinho(estado.carrinho)}\n\nEscolha uma ação:`
                 })
             }
@@ -969,21 +951,21 @@ async function startBot() {
                                 `• Informar prazo de entrega\n` +
                                 `• Finalizar o pagamento\n\n` +
                                 `Agradecemos sua preferência! 💙\n\n` +
-                                `🏠 Escolha "Menu" para voltar às opções principais.`
+                                `🏠 Digite MENU para voltar às opções principais.`
                         })
 
                     case 'confirmar_nao':
                         estado.etapa = 'carrinho'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuCarrinho(estado.carrinho.length))
+                        return enviarBotoes(sock, from, criarBotoesCarrinho(estado.carrinho.length))
 
                     case 'confirmar_voltar':
                         estado.etapa = 'carrinho'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuCarrinho(estado.carrinho.length))
+                        return enviarBotoes(sock, from, criarBotoesCarrinho(estado.carrinho.length))
 
                     default:
-                        return enviarListaSelecao(sock, from, confirmarOrcamento)
+                        return enviarBotoes(sock, from, criarBotoesConfirmacao())
                 }
             }
 
@@ -1001,24 +983,24 @@ async function startBot() {
                     case 'confirmar_orcamento':
                         estado.etapa = 'menu'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuPrincipal)
+                        return enviarBotoes(sock, from, criarBotoesMenu())
 
                     case 'acompanhar_pedido':
                     case 'atendente_humano':
                         estado.etapa = 'menu'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuPrincipal)
+                        return enviarBotoes(sock, from, criarBotoesMenu())
 
                     case 'menu_fora_horario':
                     case 'catalogo_fora_horario':
                         estado.etapa = 'menu_fora_horario'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuForaHorario)
+                        return enviarBotoes(sock, from, criarBotoesForaHorario())
 
                     default:
                         estado.etapa = 'menu'
                         saveJSONFile(ESTADOS_FILE, estados)
-                        return enviarListaSelecao(sock, from, menuPrincipal)
+                        return enviarBotoes(sock, from, criarBotoesMenu())
                 }
             }
 
@@ -1027,14 +1009,14 @@ async function startBot() {
             ========================= */
 
             // Se chegou até aqui sem processar, oferece ajuda
-            return sock.sendMessage(from, {
-                text: `🤔 *Não entendi sua mensagem*\n\n` +
-                    `Por favor, escolha uma das opções abaixo:\n\n` +
-                    `📋 Digite *MENU* para ver o menu principal\n` +
-                    `👤 Digite *ATENDENTE* para falar com um atendente\n` +
-                    `🛒 Digite *CARRINHO* para ver seu carrinho\n` +
-                    `🔄 Digite *VOLTAR* para voltar à etapa anterior\n\n` +
-                    `Ou descreva sua necessidade e te ajudaremos!`
+            return enviarBotoes(sock, from, {
+                text: `🤔 *Não entendi sua mensagem*\n\nPor favor, escolha uma opção:`,
+                buttons: [
+                    { buttonId: 'menu', buttonText: { displayText: '📋 Menu Principal' }, type: 1 },
+                    { buttonId: 'atendente', buttonText: { displayText: '👤 Falar com Atendente' }, type: 1 },
+                    { buttonId: 'carrinho', buttonText: { displayText: '🛒 Meu Carrinho' }, type: 1 }
+                ],
+                headerType: 1
             })
 
         } catch (error) {
