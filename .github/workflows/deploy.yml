@@ -1,0 +1,25 @@
+name: Deploy Bot WhatsApp Oracle
+git status
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy no servidor Oracle
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/ubuntu/bot-whatsapp
+            git pull origin main
+            npm install --production
+            pm2 reload bot-whatsapp || pm2 start index.js --name bot-whatsapp
+
