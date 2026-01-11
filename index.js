@@ -286,10 +286,30 @@ async function startBot() {
 ========================= */
 
 if (texto?.toUpperCase() === 'TESTE') {
-    console.log('🧪 TESTE DISPARADO COM SUCESSO')
+    console.log('🧪 MENU DE TESTE ABERTO')
 
     return sock.sendMessage(from, {
-        text: '🧪 TESTE FUNCIONOU'
+        listMessage: {
+            title: '🧪 MENU DE TESTE',
+            description: 'Escolha uma opção abaixo',
+            buttonText: 'Abrir menu',
+            sections: [
+                {
+                    title: 'Testes',
+                    rows: [
+                        { title: 'Opção 1', rowId: 'op_1' },
+                        { title: 'Opção 2', rowId: 'op_2' }
+                    ]
+                }
+            ]
+        }
+    })
+}
+if (texto === 'op_1' || texto === 'op_2') {
+    console.log('🧪 CLIQUE NO MENU:', texto)
+
+    return sock.sendMessage(from, {
+        text: `✅ Você clicou em: ${texto}`
     })
 }
 
