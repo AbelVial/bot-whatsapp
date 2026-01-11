@@ -209,7 +209,7 @@ async function startBot() {
 
     const sock = makeWASocket({
         logger: P({
-            level: 'silent'
+            level: 'debug'
         }),
         auth: state,
         printQRInTerminal: true,
@@ -286,41 +286,32 @@ async function startBot() {
 ========================= */
 
 if (texto?.toUpperCase() === 'TESTE') {
-    console.log('🧪 MENU INTERATIVO ABERTO')
+    console.log('🧪 MENU LISTA ABERTO')
 
     return sock.sendMessage(from, {
-        interactiveMessage: {
-            header: {
-                title: '🧪 MENU DE TESTE'
-            },
-            body: {
-                text: 'Escolha uma opção abaixo'
-            },
-            footer: {
-                text: 'Teste Baileys'
-            },
-            nativeFlowMessage: {
-                buttons: [
+        text: '🧪 *MENU DE TESTE*\n\nEscolha uma opção:',
+        footer: 'Teste Baileys',
+        buttonText: 'Abrir opções',
+        sections: [
+            {
+                title: 'Testes',
+                rows: [
                     {
-                        name: 'single_select',
-                        buttonParamsJson: JSON.stringify({
-                            title: 'Abrir opções',
-                            sections: [
-                                {
-                                    title: 'Testes',
-                                    rows: [
-                                        { title: 'Opção 1', id: 'op_1' },
-                                        { title: 'Opção 2', id: 'op_2' }
-                                    ]
-                                }
-                            ]
-                        })
+                        title: 'Opção 1',
+                        rowId: 'op_1',
+                        description: 'Primeira opção de teste'
+                    },
+                    {
+                        title: 'Opção 2',
+                        rowId: 'op_2',
+                        description: 'Segunda opção de teste'
                     }
                 ]
             }
-        }
+        ]
     })
 }
+
 
             const interactiveResponse =
     msg.message?.interactiveResponseMessage
