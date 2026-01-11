@@ -1,5 +1,4 @@
 name: Deploy Bot WhatsApp Oracle
-git status
 
 on:
   push:
