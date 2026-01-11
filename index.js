@@ -1,64 +1,11 @@
-import makeWASocket, {
-    useMultiFileAuthState,
-    DisconnectReason
-} from '@whiskeysockets/baileys'
+import makeWASocket, { useMultiFileAuthState } from '@whiskeysockets/baileys'
 import P from 'pino'
-import fs from 'fs'
 import qrcode from 'qrcode-terminal'
-import { catalogo, textoCatalogo } from './catalogo.js'
-
-/* =========================
-   CONFIGURAÇÕES
-========================= */
-
-const ESTADOS_FILE = './estados.json'
-
-const HORARIO_ATENDIMENTO = {
-    0: { inicio: 10, fim: 14 }, // Domingo
-    1: { inicio: 9,  fim: 18 }, // Segunda
-    2: { inicio: 9,  fim: 18 }, // Terça
-    3: { inicio: 9,  fim: 18 }, // Quarta
-    4: { inicio: 9,  fim: 18 }, // Quinta
-    5: { inicio: 9,  fim: 18 }, // Sexta
-    6: { inicio: 9,  fim: 13 }  // Sábado
-}
 
 const ATENDENTES = {
     pedido: 'Abel',
     acompanhamento: 'Cristiane'
 }
-
-/* =========================
-   FUNÇÕES
-========================= */
-
-function dentroHorario() {
-    const agora = new Date()
-    const dia = agora.getDay()
-    const horaAtual = agora.getHours() + agora.getMinutes() / 60
-
-    const horarioDia = HORARIO_ATENDIMENTO[dia]
-
-    if (!horarioDia) return false
-
-    return horaAtual >= horarioDia.inicio &&
-           horaAtual < horarioDia.fim
-}
-
-function getEstados() {
-    if (!fs.existsSync(ESTADOS_FILE)) {
-        fs.writeFileSync(ESTADOS_FILE, JSON.stringify({}, null, 2))
-    }
-    return JSON.parse(fs.readFileSync(ESTADOS_FILE))
-}
-
-function saveEstados(estados) {
-    fs.writeFileSync(ESTADOS_FILE, JSON.stringify(estados, null, 2))
-}
-
-/* =========================
-   BOT
-========================= */
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth')
@@ -72,9 +19,15 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds)
 
-    sock.ev.on('connection.update', ({ connection, qr }) => {
-        if (qr) qrcode.generate(qr, { small: true })
-        if (connection === 'open') console.log('✅ Bot conectado')
+    sock.ev.on('connection.update', ({ qr, connection }) => {
+        if (qr) {
+            console.log('\n📱 Escaneie o QR Code:\n')
+            qrcode.generate(qr, { small: true })
+        }
+
+        if (connection === 'open') {
+            console.log('✅ Bot conectado com sucesso!')
+        }
     })
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
@@ -87,65 +40,32 @@ async function startBot() {
             msg.message.extendedTextMessage?.text ||
             ''
 
-        const estados = getEstados()
+        const textoLimpo = texto.trim().toUpperCase()
 
-        if (!estados[from]) {
-            estados[from] = { etapa: 'menu' }
-        }
-
-        const estado = estados[from]
-
-        /* =========================
-           FORA DO HORÁRIO
-        ========================= */
-
-        if (!dentroHorario()) {
-            await sock.sendMessage(from, {
-                text:
-`⏰ *FORA DO HORÁRIO DE ATENDIMENTO*
-
-Nosso horário:
-🕘 Segunda a Sexta: 09h às 18h
-🕘 Sábado: 09h às 13h
-
-Deixe sua mensagem que responderemos assim que possível 💙
-
-🏠 Digite *MENU* para ver opções`
-            })
-            return
-        }
-
-        /* =========================
-           MENU
-        ========================= */
-
-        if (texto.toUpperCase() === 'MENU') {
-            estado.etapa = 'menu'
-            saveEstados(estados)
-
+        // MENU PRINCIPAL
+        if (
+            textoLimpo === 'OI' ||
+            textoLimpo === 'OLÁ' ||
+            textoLimpo === 'OLA' ||
+            textoLimpo === 'MENU'
+        ) {
             return sock.sendMessage(from, {
                 text:
-`📋 *MENU PRINCIPAL*
+`👋 Olá! Seja bem-vindo(a) à *CrieArtes Personalizados* 🎨
 
-1️⃣ Fazer um pedido
-2️⃣ Acompanhamento de pedido
-3️⃣ Consultar produtos/preços
+Como podemos te ajudar?
 
-🔢 Digite o número da opção`
+1️⃣ *Fazer um pedido*
+2️⃣ *Acompanhamento de pedido*
+
+🔢 Digite o número da opção desejada`
             })
         }
 
-        /* =========================
-           MENU PRINCIPAL
-        ========================= */
-
-        if (estado.etapa === 'menu') {
-            switch (texto) {
-                case '1':
-                    estado.etapa = 'pedido'
-                    saveEstados(estados)
-                    return sock.sendMessage(from, {
-                        text:
+        // OPÇÃO 1 - FAZER PEDIDO
+        if (textoLimpo === '1') {
+            return sock.sendMessage(from, {
+                text:
 `📝 *FAZER UM PEDIDO*
 
 Em breve você será atendido pelo atendente *${ATENDENTES.pedido}*.
@@ -153,63 +73,41 @@ Em breve você será atendido pelo atendente *${ATENDENTES.pedido}*.
 Para adiantar, informe:
 • Nome completo
 • Produto desejado e quantidade
-• E/ou qualquer dúvida
+• E/ou qualquer dúvida que tenha
 
 Agradecemos sua preferência! 💙
 
-🏠 Digite *MENU* para voltar`
-                    })
+🏠 Digite *MENU* para voltar às opções principais.`
+            })
+        }
 
-                case '2':
-                    estado.etapa = 'acompanhamento'
-                    saveEstados(estados)
-                    return sock.sendMessage(from, {
-                        text:
+        // OPÇÃO 2 - ACOMPANHAMENTO
+        if (textoLimpo === '2') {
+            return sock.sendMessage(from, {
+                text:
 `📦 *ACOMPANHAMENTO DE PEDIDO*
 
 Em breve você será atendido pela atendente *${ATENDENTES.acompanhamento}*.
 
 Para adiantar, informe:
 • Nome completo
-• E/ou qualquer dúvida
+• E/ou qualquer dúvida que tenha
 
 Agradecemos sua preferência! 💙
 
-🏠 Digite *MENU* para voltar`
-                    })
-
-                case '3':
-                    estado.etapa = 'catalogo'
-                    saveEstados(estados)
-                    return sock.sendMessage(from, {
-                        text: textoCatalogo()
-                    })
-
-                default:
-                    return sock.sendMessage(from, {
-                        text: '❌ Opção inválida. Digite *MENU* para ver as opções.'
-                    })
-            }
+🏠 Digite *MENU* para voltar às opções principais.`
+            })
         }
 
-        /* =========================
-           CATÁLOGO
-        ========================= */
+        // QUALQUER OUTRA MENSAGEM
+        return sock.sendMessage(from, {
+            text:
+`🤔 Não entendi sua mensagem.
 
-        if (estado.etapa === 'catalogo') {
-            if (texto.toUpperCase() === 'MENU') {
-                estado.etapa = 'menu'
-                saveEstados(estados)
-                return sock.sendMessage(from, {
-                    text:
-`📋 *MENU PRINCIPAL*
-
-1️⃣ Fazer um pedido
-2️⃣ Acompanhamento de pedido
-3️⃣ Consultar produtos/preços`
-                })
-            }
-        }
+Digite:
+• *MENU* para ver as opções
+• *OI* para iniciar o atendimento`
+        })
     })
 }
 
