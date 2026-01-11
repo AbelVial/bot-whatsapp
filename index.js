@@ -24,14 +24,14 @@ const HORARIO_ATENDIMENTO = {
     dias: [1, 2, 3, 4, 5, 6], // Segunda a Sábado
     inicio: 9,
     fim: 18,
-    sabadoFim: 18 // Horário especial para sábado
+    sabadoFim: 13 // Horário especial para sábado
 }
 
 const ATENDENTES = {
-    orcamento: "Abel",
-    acompanhamento: "Cristiane",
-    geral: "Cristiane",
-    whatsapp: "https://wa.me/5527999999999" // Substitua pelo número real
+    orcamento: process.env.ATENDENTE_ORCAMENTO,
+    acompanhamento: process.env.ATENDENTE_ACOMPANHAMENTO,
+    geral: process.env.ATENDENTE_GERAL,
+    whatsapp: process.env.WHATSAPP_CONTATO
 }
 
 /* =========================
