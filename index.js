@@ -212,7 +212,7 @@ async function startBot() {
             level: 'silent'
         }),
         auth: state,
-        printQRInTerminal: false,
+        printQRInTerminal: true,
         browser: ["CrieArtes Bot", "Chrome", "3.0"],
         markOnlineOnConnect: true
     })
@@ -236,8 +236,16 @@ async function startBot() {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
+            const isLoggedOut = lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut
 
+            if (!isLoggedOut) {
+                console.log('🔌 Conexão perdida. Reconectando em 5 segundos...')
+                setTimeout(() => startBot(), 5000)
+            } else {
+                console.log('❌ Sessão finalizada. Escaneie o QR Code novamente.')
+                rmSync('auth', { recursive: true, force: true }) // opcional: apagar pasta auth
+            }
+            
             if (shouldReconnect) {
                 console.log('🔌 Conexão perdida. Reconectando em 5 segundos...')
                 setTimeout(() => {
