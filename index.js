@@ -18,10 +18,15 @@ const PEDIDOS_FILE = './pedidos.json'
 const HORARIO_FILE = './horario_status.json'
 
 const HORARIO_ATENDIMENTO = {
-    dias: [1, 2, 3, 4, 5, 6], // Segunda a Sábado
-    inicio: 9,
-    fim: 18,
-    sabadoFim: 13
+    dias: {
+        0: { inicio: 10, fim: 15 },   // Domingo
+        1: { inicio: 9, fim: 18 },    // Segunda
+        2: { inicio: 9, fim: 18 },    // Terça
+        3: { inicio: 9, fim: 18 },    // Quarta
+        4: { inicio: 9, fim: 18 },    // Quinta
+        5: { inicio: 9, fim: 18 },    // Sexta
+        6: { inicio: 9, fim: 13 }     // Sábado
+    },
 }
 
 const ATENDENTES = {
@@ -40,17 +45,16 @@ function dentroHorario() {
     const minutos = agora.getMinutes()
     const horaAtual = hora + (minutos / 60)
 
-    if (!HORARIO_ATENDIMENTO.dias.includes(diaSemana)) {
-        return false
+    // Verifica se o dia está configurado
+    const horarioDia = HORARIO_ATENDIMENTO.dias[diaSemana]
+    
+    if (!horarioDia) {
+        return false // Dia não configurado para atendimento
     }
 
-    if (diaSemana === 6) { // Sábado
-        return horaAtual >= HORARIO_ATENDIMENTO.inicio &&
-            horaAtual < HORARIO_ATENDIMENTO.sabadoFim
-    }
-
-    return horaAtual >= HORARIO_ATENDIMENTO.inicio &&
-        horaAtual < HORARIO_ATENDIMENTO.fim
+    // Verifica se está dentro do horário do dia específico
+    return horaAtual >= horarioDia.inicio && 
+           horaAtual < horarioDia.fim
 }
 
 function getJSONFile(filename, defaultData = {}) {
@@ -76,8 +80,29 @@ function saveJSONFile(filename, data) {
 }
 
 function formatarHorarioAtendimento() {
-    return `Segunda a Sexta: ${HORARIO_ATENDIMENTO.inicio.toString().padStart(2, '0')}:00 às ${HORARIO_ATENDIMENTO.fim.toString().padStart(2, '0')}:00\n` +
-        `Sábado: ${HORARIO_ATENDIMENTO.inicio.toString().padStart(2, '0')}:00 às ${HORARIO_ATENDIMENTO.sabadoFim.toString().padStart(2, '0')}:00`
+    const diasMap = {
+        0: 'Domingo',
+        1: 'Segunda-feira',
+        2: 'Terça-feira',
+        3: 'Quarta-feira',
+        4: 'Quinta-feira',
+        5: 'Sexta-feira',
+        6: 'Sábado'
+    }
+
+    let texto = '🕘 *Horários de Atendimento:*\n\n'
+    
+    // Organizar por dia da semana
+    for (let i = 0; i <= 6; i++) {
+        const horario = HORARIO_ATENDIMENTO.dias[i]
+        if (horario) {
+            texto += `• *${diasMap[i]}:* ` +
+                     `${horario.inicio.toString().padStart(2, '0')}:00 às ` +
+                     `${horario.fim.toString().padStart(2, '0')}:00\n`
+        }
+    }
+    
+    return texto
 }
 
 function getSaudacao() {
