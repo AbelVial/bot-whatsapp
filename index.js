@@ -286,32 +286,55 @@ async function startBot() {
 ========================= */
 
 if (texto?.toUpperCase() === 'TESTE') {
-    console.log('🧪 MENU DE TESTE ABERTO')
+    console.log('🧪 MENU INTERATIVO ABERTO')
 
     return sock.sendMessage(from, {
-        listMessage: {
-            title: '🧪 MENU DE TESTE',
-            description: 'Escolha uma opção abaixo',
-            buttonText: 'Abrir menu',
-            sections: [
-                {
-                    title: 'Testes',
-                    rows: [
-                        { title: 'Opção 1', rowId: 'op_1' },
-                        { title: 'Opção 2', rowId: 'op_2' }
-                    ]
-                }
-            ]
+        interactiveMessage: {
+            header: {
+                title: '🧪 MENU DE TESTE'
+            },
+            body: {
+                text: 'Escolha uma opção abaixo'
+            },
+            footer: {
+                text: 'Teste Baileys'
+            },
+            nativeFlowMessage: {
+                buttons: [
+                    {
+                        name: 'single_select',
+                        buttonParamsJson: JSON.stringify({
+                            title: 'Abrir opções',
+                            sections: [
+                                {
+                                    title: 'Testes',
+                                    rows: [
+                                        { title: 'Opção 1', id: 'op_1' },
+                                        { title: 'Opção 2', id: 'op_2' }
+                                    ]
+                                }
+                            ]
+                        })
+                    }
+                ]
+            }
         }
     })
 }
-if (texto === 'op_1' || texto === 'op_2') {
-    console.log('🧪 CLIQUE NO MENU:', texto)
+
+            const interactiveResponse =
+    msg.message?.interactiveResponseMessage
+        ?.nativeFlowResponseMessage?.paramsJson
+
+if (interactiveResponse) {
+    const data = JSON.parse(interactiveResponse)
+    console.log('🧪 CLIQUE MENU:', data)
 
     return sock.sendMessage(from, {
-        text: `✅ Você clicou em: ${texto}`
+        text: `✅ Você clicou em: ${data.id}`
     })
 }
+
 
 
             const estados = getJSONFile(ESTADOS_FILE)
