@@ -278,6 +278,19 @@ async function startBot() {
                 msg.message.buttonsResponseMessage?.selectedButtonId ||
                 ''
 
+            /* =========================
+   TESTE SIMPLES (DEBUG)
+========================= */
+
+if (texto?.toUpperCase() === 'TESTE') {
+    console.log('🧪 TESTE DISPARADO COM SUCESSO')
+
+    return sock.sendMessage(from, {
+        text: '🧪 TESTE FUNCIONOU'
+    })
+}
+
+
             const estados = getJSONFile(ESTADOS_FILE)
 
             if (!estados[from]) {
