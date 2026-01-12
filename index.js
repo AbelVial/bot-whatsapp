@@ -25,7 +25,8 @@ const HORARIO_ATENDIMENTO = {
 }
 
 const ATENDENTES = {
-    geral: process.env.ATENDENTE_GERAL
+    geral: process.env.ATENDENTE_GERAL,
+    orcamento: process.env.ATENDENTE_ORCAMENTO
 }
 
 /* =========================
@@ -180,7 +181,7 @@ if (estado.etapa === 'menu') {
             return sock.sendMessage(from, {
                 text:
                     `📝 *FAZER ORÇAMENTO*\n\n` +
-                    `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
+                    `Você será atendido por *${ATENDENTES.orcamento}* em instantes.\n\n` +
                     `Por favor, descreva sua necessidade:`
             })
 
