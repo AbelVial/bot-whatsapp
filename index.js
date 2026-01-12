@@ -4,13 +4,225 @@ import fs from 'fs'
 import path from 'path'
 import qrcode from 'qrcode-terminal'
 
-/* =========================
-   CONFIGURAÇÕES
-========================= */
+const ANTI_BAN_CONFIG = {
+    ATIVO: true,
+    DELAY_MINIMO: 1000,
+    DELAY_MAXIMO: 5000,
+    VARIACAO_HUMANA: true,
+    BLOQUEIO_RAPIDO: true,
+    MAX_MENSAGENS_MINUTO: 15,
+    PAUSA_OCASIONAL: true,
+    PAUSA_PROBABILIDADE: 0.1,
+    PAUSA_TEMPO: 30000,
+    LOG_DELAYS: true
+}
+
+class RateLimiter {
+    constructor() {
+        this.contadorMensagens = []
+        this.ultimoEnvio = new Map()
+        this.bloqueiosAtivos = new Map()
+    }
+
+    podeEnviar(numero) {
+        if (!ANTI_BAN_CONFIG.BLOQUEIO_RAPIDO) return true
+        
+        const agora = Date.now()
+        
+        const bloqueadoAte = this.bloqueiosAtivos.get(numero)
+        if (bloqueadoAte && agora < bloqueadoAte) {
+            const segundosRestantes = Math.ceil((bloqueadoAte - agora) / 1000)
+            console.log(`⏳ ${numero} bloqueado por mais ${segundosRestantes}s`)
+            return false
+        }
+        
+        if (bloqueadoAte && agora >= bloqueadoAte) {
+            this.bloqueiosAtivos.delete(numero)
+        }
+        
+        const umMinutoAtras = agora - 60000
+        this.contadorMensagens = this.contadorMensagens.filter(
+            item => item.timestamp > umMinutoAtras
+        )
+        
+        const mensagensNumero = this.contadorMensagens.filter(
+            item => item.numero === numero
+        ).length
+        
+        if (mensagensNumero >= ANTI_BAN_CONFIG.MAX_MENSAGENS_MINUTO) {
+            const bloqueioAte = agora + 60000
+            this.bloqueiosAtivos.set(numero, bloqueioAte)
+            console.log(`🚫 ${numero} excedeu limite de mensagens. Bloqueado por 1 minuto.`)
+            return false
+        }
+        
+        return true
+    }
+
+    registrarEnvio(numero) {
+        this.contadorMensagens.push({
+            numero,
+            timestamp: Date.now()
+        })
+        this.ultimoEnvio.set(numero, Date.now())
+    }
+
+    tempoDesdeUltimoEnvio(numero) {
+        const ultimo = this.ultimoEnvio.get(numero)
+        if (!ultimo) return null
+        return Date.now() - ultimo
+    }
+
+    limparAntigos() {
+        const umaHoraAtras = Date.now() - 3600000
+        this.contadorMensagens = this.contadorMensagens.filter(
+            item => item.timestamp > umaHoraAtras
+        )
+    }
+}
+
+class DelayHumano {
+    static getDelay() {
+        if (!ANTI_BAN_CONFIG.ATIVO) return 0
+        
+        let delay = Math.floor(
+            Math.random() * 
+            (ANTI_BAN_CONFIG.DELAY_MAXIMO - ANTI_BAN_CONFIG.DELAY_MINIMO) + 
+            ANTI_BAN_CONFIG.DELAY_MINIMO
+        )
+        
+        if (ANTI_BAN_CONFIG.VARIACAO_HUMANA) {
+            const variacao = Math.random() * 0.3 + 0.85
+            delay = Math.floor(delay * variacao)
+            
+            if (Math.random() < 0.05) {
+                delay += Math.floor(Math.random() * 3000)
+            }
+        }
+        
+        if (ANTI_BAN_CONFIG.PAUSA_OCASIONAL && 
+            Math.random() < ANTI_BAN_CONFIG.PAUSA_PROBABILIDADE) {
+            delay += ANTI_BAN_CONFIG.PAUSA_TEMPO
+            console.log(`⏸️ Pausa longa simulada: ${ANTI_BAN_CONFIG.PAUSA_TEMPO/1000}s`)
+        }
+        
+        if (ANTI_BAN_CONFIG.LOG_DELAYS) {
+            console.log(`⏱️ Delay gerado: ${delay}ms`)
+        }
+        
+        return delay
+    }
+    
+    static getDelayPorTipo(tipo) {
+        const delays = {
+            'menu': { min: 1500, max: 4000 },
+            'texto': { min: 1000, max: 3000 },
+            'complexo': { min: 2000, max: 5000 },
+            'imagem': { min: 3000, max: 7000 },
+            'erro': { min: 800, max: 2000 }
+        }
+        
+        const config = delays[tipo] || delays['texto']
+        return Math.floor(
+            Math.random() * (config.max - config.min) + config.min
+        )
+    }
+}
+
+class GestorEnvio {
+    constructor(sock) {
+        this.sock = sock
+        this.rateLimiter = new RateLimiter()
+        this.filaEnvio = []
+        this.processando = false
+        
+        setInterval(() => {
+            this.rateLimiter.limparAntigos()
+        }, 3600000)
+    }
+
+    async enviarMensagem(numero, conteudo, tipo = 'texto') {
+        return new Promise((resolve, reject) => {
+            this.filaEnvio.push({
+                numero,
+                conteudo,
+                tipo,
+                resolve,
+                reject,
+                timestamp: Date.now()
+            })
+            
+            if (!this.processando) {
+                this.processarFila()
+            }
+        })
+    }
+
+    async processarFila() {
+        if (this.filaEnvio.length === 0) {
+            this.processando = false
+            return
+        }
+        
+        this.processando = true
+        const item = this.filaEnvio.shift()
+        
+        try {
+            if (!this.rateLimiter.podeEnviar(item.numero)) {
+                setTimeout(() => {
+                    this.filaEnvio.unshift(item)
+                    this.processarFila()
+                }, 30000)
+                return
+            }
+            
+            let delay = ANTI_BAN_CONFIG.ATIVO ? DelayHumano.getDelayPorTipo(item.tipo) : 0
+            
+            const tempoDesdeUltimo = this.rateLimiter.tempoDesdeUltimoEnvio(item.numero)
+            if (tempoDesdeUltimo !== null && tempoDesdeUltimo < 1000) {
+                delay += 2000
+            }
+            
+            if (delay > 0) {
+                if (ANTI_BAN_CONFIG.LOG_DELAYS) {
+                    console.log(`⏳ Aguardando ${delay}ms antes de enviar para ${item.numero.split('@')[0]}`)
+                }
+                await this.delay(delay)
+            }
+            
+            const resultado = await this.sock.sendMessage(item.numero, item.conteudo)
+            
+            this.rateLimiter.registrarEnvio(item.numero)
+            
+            if (ANTI_BAN_CONFIG.LOG_DELAYS) {
+                console.log(`✅ Mensagem enviada para ${item.numero.split('@')[0]}`)
+            }
+            
+            item.resolve(resultado)
+            
+        } catch (error) {
+            console.error(`❌ Erro ao enviar mensagem para ${item.numero}:`, error)
+            
+            if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+                console.log('🚨 Rate limit detectado pelo WhatsApp. Pausando por 2 minutos...')
+                await this.delay(120000)
+            }
+            
+            item.reject(error)
+        }
+        
+        setTimeout(() => this.processarFila(), 100)
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms))
+    }
+}
 
 const ESTADOS_DIR = './estados'
 const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
 const WHITELIST_FILE = './whitelist.json'
+const STATS_FILE = './stats_anti_ban.json'
 
 const ADMINS = [
     '5527999975339@s.whatsapp.net' 
@@ -35,21 +247,72 @@ const ATENDENTES = {
 }
 
 const RESGATE_CONFIG = {
-    TEMPO_ESPERA_MINUTOS: 5, // Tempo para considerar que o cliente parou
+    TEMPO_ESPERA_MINUTOS: 5,
     MENSAGEM_RESGATE: "Oi 😊 ainda posso te ajudar?\nDigite MENU para ver as opções."
 }
 
-/* =========================
-   UTILITÁRIOS - ARQUIVOS INDIVIDUAIS
-========================= */
+class EstatisticasAntiBan {
+    constructor() {
+        this.stats = this.carregarStats()
+    }
 
-// Garante que o diretório de estados existe
+    carregarStats() {
+        if (!fs.existsSync(STATS_FILE)) {
+            return {
+                totalMensagens: 0,
+                totalDelays: 0,
+                tempoTotalDelay: 0,
+                bloqueios: 0,
+                rateLimits: 0,
+                inicio: new Date().toISOString()
+            }
+        }
+        return getJSONFile(STATS_FILE)
+    }
+
+    salvarStats() {
+        saveJSONFile(STATS_FILE, this.stats)
+    }
+
+    registrarEnvio(delay = 0) {
+        this.stats.totalMensagens++
+        if (delay > 0) {
+            this.stats.totalDelays++
+            this.stats.tempoTotalDelay += delay
+        }
+        this.salvarStats()
+    }
+
+    registrarBloqueio() {
+        this.stats.bloqueios++
+        this.salvarStats()
+    }
+
+    registrarRateLimit() {
+        this.stats.rateLimits++
+        this.salvarStats()
+    }
+
+    getResumo() {
+        const avgDelay = this.stats.totalDelays > 0 
+            ? Math.floor(this.stats.tempoTotalDelay / this.stats.totalDelays)
+            : 0
+        
+        return `📊 ESTATÍSTICAS ANTI-BAN:
+• Mensagens enviadas: ${this.stats.totalMensagens}
+• Delays aplicados: ${this.stats.totalDelays}
+• Delay médio: ${avgDelay}ms
+• Bloqueios: ${this.stats.bloqueios}
+• Rate limits: ${this.stats.rateLimits}
+• Desde: ${new Date(this.stats.inicio).toLocaleString()}`
+    }
+}
+
 if (!fs.existsSync(ESTADOS_DIR)) {
     fs.mkdirSync(ESTADOS_DIR, { recursive: true })
 }
 
 function getNumeroFile(numero) {
-    // Remove o @s.whatsapp.net e caracteres inválidos para nome de arquivo
     const numeroLimpo = numero.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '')
     return path.join(ESTADOS_DIR, `${numeroLimpo}.json`)
 }
@@ -98,7 +361,6 @@ function getAllClientes() {
                 const filePath = path.join(ESTADOS_DIR, file)
                 try {
                     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'))
-                    // Reconstruir o número do arquivo (adiciona @s.whatsapp.net)
                     const numero = `55${file.replace('.json', '')}@s.whatsapp.net`
                     clientes.push({ numero, estado: data })
                 } catch (error) {
@@ -181,11 +443,7 @@ function isWhitelisted(numero) {
     return !!lista[numero]
 }
 
-/* =========================
-   SISTEMA DE RESGATE
-========================= */
-
-function configurarSistemaResgate(sock) {
+function configurarSistemaResgate(sock, gestorEnvio) {
     setInterval(async () => {
         try {
             const clientes = getAllClientes()
@@ -193,31 +451,23 @@ function configurarSistemaResgate(sock) {
             let resgatesEnviados = 0
 
             for (const { numero, estado } of clientes) {
-                // Verifica se o cliente está no menu e inativo
-                if (estado.etapa === 'menu' && estado.ultimaInteracao) {
+                if (estado.etapa === 'menu' && estado.ultimaInteracao && !estado.resgatado) {
                     const ultimaInteracao = new Date(estado.ultimaInteracao)
                     const minutosInativo = (agora - ultimaInteracao) / (1000 * 60)
 
-                    // Se passou o tempo configurado e ainda não foi resgatado
-                    if (minutosInativo >= RESGATE_CONFIG.TEMPO_ESPERA_MINUTOS && !estado.resgatado) {
-                        
-                        // Marca como resgatado para não enviar múltiplas vezes
+                    if (minutosInativo >= RESGATE_CONFIG.TEMPO_ESPERA_MINUTOS) {
                         estado.resgatado = true
                         estado.ultimoResgate = agora.toISOString()
-                        
-                        // Salva o estado atualizado
                         saveEstadoCliente(numero, estado)
 
-                        // Envia a mensagem de resgate
-                        try {
-                            await sock.sendMessage(numero, {
-                                text: RESGATE_CONFIG.MENSAGEM_RESGATE
-                            })
-                            resgatesEnviados++
-                            console.log(`🔄 Resgate enviado para: ${numero.split('@')[0]} (${minutosInativo.toFixed(1)}min inativo)`)
-                        } catch (error) {
-                            console.error(`❌ Erro ao enviar resgate para ${numero}:`, error)
-                        }
+                        await gestorEnvio.enviarMensagem(
+                            numero,
+                            { text: RESGATE_CONFIG.MENSAGEM_RESGATE },
+                            'texto'
+                        )
+                        
+                        resgatesEnviados++
+                        console.log(`🔄 Resgate enviado para: ${numero.split('@')[0]} (${minutosInativo.toFixed(1)}min inativo)`)
                     }
                 }
             }
@@ -228,12 +478,8 @@ function configurarSistemaResgate(sock) {
         } catch (error) {
             console.error('❌ Erro no sistema de resgate:', error)
         }
-    }, 60 * 1000) // Verifica a cada 1 minuto
+    }, 60 * 1000)
 }
-
-/* =========================
-   BOT
-========================= */
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth')
@@ -244,6 +490,9 @@ async function startBot() {
         printQRInTerminal: true,
         browser: ['CrieArtes Bot', 'Chrome', '3.0']
     })
+
+    const gestorEnvio = new GestorEnvio(sock)
+    const estatisticas = new EstatisticasAntiBan()
 
     sock.ev.on('creds.update', saveCreds)
 
@@ -256,9 +505,12 @@ async function startBot() {
         }
 
         if (connection === 'open') {
-            console.log('✅ Bot conectado')
-            console.log(`📁 Diretório de estados: ${ESTADOS_DIR}`)
-            configurarSistemaResgate(sock) // Inicia o sistema de resgate
+            console.log('✅ Bot conectado com sistema Anti-Ban')
+            console.log(`📊 Config Anti-Ban: ${ANTI_BAN_CONFIG.ATIVO ? 'ATIVO' : 'INATIVO'}`)
+            console.log(`⏱️ Delays: ${ANTI_BAN_CONFIG.DELAY_MINIMO}-${ANTI_BAN_CONFIG.DELAY_MAXIMO}ms`)
+            console.log(estatisticas.getResumo())
+            
+            configurarSistemaResgate(sock, gestorEnvio)
         }
     })
 
@@ -268,14 +520,10 @@ async function startBot() {
 
         const from = msg.key.remoteJid
 
-       /* =========================
-            WHITELIST (IGNORA BOT)
-         ========================= */
-         
-         if (isWhitelisted(from) && !ADMINS.includes(from)) {
-             console.log(`⭐ Número na whitelist (ignorado pelo bot): ${from}`)
-             return
-         }
+        if (isWhitelisted(from) && !ADMINS.includes(from)) {
+            console.log(`⭐ Número na whitelist (ignorado): ${from.split('@')[0]}`)
+            return
+        }
 
         const texto = (
             msg.message.conversation ||
@@ -283,26 +531,86 @@ async function startBot() {
             ''
         ).trim().toUpperCase()
 
-        // Obtém estado individual do cliente
         const estado = getEstadoCliente(from)
-        
-        // Atualiza timestamp da última interação e reseta flag de resgate
         estado.ultimaInteracao = new Date().toISOString()
         estado.resgatado = false
 
-         if (podeMarcarComoLida(estado)) {
-             await marcarComoLida(sock, msg)
-         }
+        if (podeMarcarComoLida(estado)) {
+            await marcarComoLida(sock, msg)
+        }
 
-        /* =========================
-           COMANDOS GLOBAIS
-        ========================= */
+        if (texto === '/ANTIBANSTATS') {
+            if (!ADMINS.includes(from)) {
+                return gestorEnvio.enviarMensagem(from, { 
+                    text: '❌ Você não tem permissão.' 
+                }, 'texto')
+            }
+            
+            const resumo = estatisticas.getResumo()
+            const config = `⚙️ CONFIG ATUAL:
+• Ativo: ${ANTI_BAN_CONFIG.ATIVO}
+• Delay: ${ANTI_BAN_CONFIG.DELAY_MINIMO}-${ANTI_BAN_CONFIG.DELAY_MAXIMO}ms
+• Máx/min: ${ANTI_BAN_CONFIG.MAX_MENSAGENS_MINUTO} msg/min
+• Variação: ${ANTI_BAN_CONFIG.VARIACAO_HUMANA ? 'ON' : 'OFF'}
+• Pausas: ${ANTI_BAN_CONFIG.PAUSA_OCASIONAL ? 'ON' : 'OFF'}`
+            
+            return gestorEnvio.enviarMensagem(from, { 
+                text: `${resumo}\n\n${config}` 
+            }, 'texto')
+        }
+
+        if (texto.startsWith('/SETDELAY')) {
+            if (!ADMINS.includes(from)) {
+                return gestorEnvio.enviarMensagem(from, { 
+                    text: '❌ Você não tem permissão.' 
+                }, 'texto')
+            }
+
+            const partes = texto.split(' ')
+            if (partes.length !== 3) {
+                return gestorEnvio.enviarMensagem(from, { 
+                    text: '❌ Use: /setdelay MIN MAX (em ms)\nEx: /setdelay 1000 5000' 
+                }, 'texto')
+            }
+
+            const min = parseInt(partes[1])
+            const max = parseInt(partes[2])
+
+            if (isNaN(min) || isNaN(max) || min < 0 || max < min) {
+                return gestorEnvio.enviarMensagem(from, { 
+                    text: '❌ Valores inválidos. Use números positivos com MIN < MAX' 
+                }, 'texto')
+            }
+
+            ANTI_BAN_CONFIG.DELAY_MINIMO = min
+            ANTI_BAN_CONFIG.DELAY_MAXIMO = max
+
+            return gestorEnvio.enviarMensagem(from, { 
+                text: `✅ Delay configurado: ${min}-${max}ms` 
+            }, 'texto')
+        }
+
+        if (texto === '/TOGGLEANTIBAN') {
+            if (!ADMINS.includes(from)) {
+                return gestorEnvio.enviarMensagem(from, { 
+                    text: '❌ Você não tem permissão.' 
+                }, 'texto')
+            }
+
+            ANTI_BAN_CONFIG.ATIVO = !ANTI_BAN_CONFIG.ATIVO
+            const status = ANTI_BAN_CONFIG.ATIVO ? 'ATIVADO' : 'DESATIVADO'
+
+            return gestorEnvio.enviarMensagem(from, { 
+                text: `✅ Sistema Anti-Ban ${status}` 
+            }, 'texto')
+        }
 
         if (texto === 'MENU') {
             estado.etapa = 'menu'
             saveEstadoCliente(from, estado)
 
-            return sock.sendMessage(from, {
+            estatisticas.registrarEnvio()
+            return gestorEnvio.enviarMensagem(from, {
                 text: `Como podemos ajudar você hoje? 🤔\n\n` +
                       `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                       `   ↳ Solicite um orçamento personalizado\n\n` +
@@ -311,86 +619,76 @@ async function startBot() {
                       `3️⃣ 📋 *VER CATÁLOGO*\n` +
                       `   ↳ Consulte produtos e valores\n\n` +
                       `🔢 *Digite o número da opção desejada:*`
-            })
+            }, 'menu')
         }
 
         if (texto === 'ENCERRAR' || texto === 'FINALIZAR') {
             estado.etapa = 'inicio'
             saveEstadoCliente(from, estado)
 
-            return sock.sendMessage(from, {
+            estatisticas.registrarEnvio()
+            return gestorEnvio.enviarMensagem(from, {
                 text: `✅ *Atendimento encerrado com sucesso!*\n\n` +
                       `Se precisar de algo mais, é só enviar uma mensagem 😊`
-            })
+            }, 'texto')
         }
 
-       /* =========================
-            COMANDOS ADMIN
-         ========================= */
-         
-         if (texto.startsWith('/ADDWHITELIST')) {
-             if (!ADMINS.includes(from)) {
-                 return sock.sendMessage(from, { text: '❌ Você não tem permissão.' })
-             }
-         
-             const numero = texto.split(' ')[1]?.replace(/\D/g, '')
-             if (!numero) {
-                 return sock.sendMessage(from, { text: '❌ Use: /addwhitelist 5599999999999' })
-             }
-         
-             const jid = `${numero}@s.whatsapp.net`
-             const lista = getWhitelist()
-         
-             if (lista[jid]) {
-                 return sock.sendMessage(from, { text: '⚠️ Número já está na whitelist.' })
-             }
-         
-             lista[jid] = true
-             saveWhitelist(lista)
-         
-             return sock.sendMessage(from, {
-                 text: `✅ Número ${numero} adicionado à whitelist.`
-             })
-         }
-
-         
-         if (texto.startsWith('/REMOVEWHITELIST')) {
-             if (!ADMINS.includes(from)) {
-                 return sock.sendMessage(from, { text: '❌ Você não tem permissão.' })
-             }
-         
-             const numero = texto.split(' ')[1]?.replace(/\D/g, '')
-             if (!numero) {
-                 return sock.sendMessage(from, { text: '❌ Use: /removewhitelist 5599999999999' })
-             }
-         
-             const jid = `${numero}@s.whatsapp.net`
-             const lista = getWhitelist()
-         
-             if (!lista[jid]) {
-                 return sock.sendMessage(from, { text: '⚠️ Número não está na whitelist.' })
-             }
-         
-             delete lista[jid]
-             saveWhitelist(lista)
-         
-             return sock.sendMessage(from, {
-                 text: `🗑️ Número ${numero} removido da whitelist.`
-             })
-         }
-
-        /* =========================
-           BLOQUEIO HUMANO
-        ========================= */
+        if (texto.startsWith('/ADDWHITELIST')) {
+            if (!ADMINS.includes(from)) {
+                return gestorEnvio.enviarMensagem(from, { text: '❌ Você não tem permissão.' }, 'texto')
+            }
+        
+            const numero = texto.split(' ')[1]?.replace(/\D/g, '')
+            if (!numero) {
+                return gestorEnvio.enviarMensagem(from, { text: '❌ Use: /addwhitelist 5599999999999' }, 'texto')
+            }
+        
+            const jid = `${numero}@s.whatsapp.net`
+            const lista = getWhitelist()
+        
+            if (lista[jid]) {
+                return gestorEnvio.enviarMensagem(from, { text: '⚠️ Número já está na whitelist.' }, 'texto')
+            }
+        
+            lista[jid] = true
+            saveWhitelist(lista)
+        
+            estatisticas.registrarEnvio()
+            return gestorEnvio.enviarMensagem(from, {
+                text: `✅ Número ${numero} adicionado à whitelist.`
+            }, 'texto')
+        }
+        
+        if (texto.startsWith('/REMOVEWHITELIST')) {
+            if (!ADMINS.includes(from)) {
+                return gestorEnvio.enviarMensagem(from, { text: '❌ Você não tem permissão.' }, 'texto')
+            }
+        
+            const numero = texto.split(' ')[1]?.replace(/\D/g, '')
+            if (!numero) {
+                return gestorEnvio.enviarMensagem(from, { text: '❌ Use: /removewhitelist 5599999999999' }, 'texto')
+            }
+        
+            const jid = `${numero}@s.whatsapp.net`
+            const lista = getWhitelist()
+        
+            if (!lista[jid]) {
+                return gestorEnvio.enviarMensagem(from, { text: '⚠️ Número não está na whitelist.' }, 'texto')
+            }
+        
+            delete lista[jid]
+            saveWhitelist(lista)
+        
+            estatisticas.registrarEnvio()
+            return gestorEnvio.enviarMensagem(from, {
+                text: `🗑️ Número ${numero} removido da whitelist.`
+            }, 'texto')
+        }
 
         if (ESTADOS_HUMANOS.includes(estado.etapa)) {
             console.log(`👤 Atendimento humano ativo: ${from}`)
             return
         }
-
-        /* =========================
-           FORA DO HORÁRIO
-        ========================= */
 
         if (!dentroHorario() && estado.etapa === 'inicio') {
           
@@ -401,34 +699,32 @@ async function startBot() {
           estado.etapa = 'fora_horario'
           saveEstadoCliente(from, estado)
       
-          return sock.sendMessage(from, {
+          estatisticas.registrarEnvio()
+          return gestorEnvio.enviarMensagem(from, {
               text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
                     `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
                     `📅 *Horários de atendimento: Seg-Sex 09:00 as 17:00*\n` +
                     `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                     `Agradecemos sua compreensão! 💙`
-          })
+          }, 'texto')
       }
-
-        /* =========================
-           INÍCIO
-        ========================= */
 
         if (estado.etapa === 'inicio') {
             const saudacao = getSaudacao()
 
-            await sock.sendMessage(from, {
+            await gestorEnvio.enviarMensagem(from, {
                 text: `${saudacao} *BEM-VINDO(A) À CRIEARTES PERSONALIZADOS!* 🎨\n\n` +
                       `Somos especialistas em transformar suas ideias em produtos únicos e personalizados com muita qualidade e criatividade! 💙\n\n` +
                       `📍 *Nossos canais oficiais:*\n` +
                       `📸 Instagram: @cacrieartes\n` +
                       `📦 Catálogo completo: https://wa.me/c/5527999975339\n\n`
-            })
+            }, 'texto')
 
             estado.etapa = 'menu'
             saveEstadoCliente(from, estado)
 
-            return sock.sendMessage(from, {
+            estatisticas.registrarEnvio()
+            return gestorEnvio.enviarMensagem(from, {
                 text: `Como podemos ajudar você hoje? 🤔\n\n` +
                       `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                       `   ↳ Solicite um orçamento personalizado\n\n` +
@@ -437,12 +733,8 @@ async function startBot() {
                       `3️⃣ 📋 *VER CATÁLOGO*\n` +
                       `   ↳ Consulte produtos e valores\n\n` +
                       `🔢 *Digite o número da opção desejada:*`
-            })
+            }, 'menu')
         }
-
-        /* =========================
-           MENU PRINCIPAL
-        ========================= */
 
         if (estado.etapa === 'menu') {
             switch (texto) {
@@ -451,7 +743,8 @@ async function startBot() {
                     estado.etapa = 'aguardando_atendente'
                     saveEstadoCliente(from, estado)
 
-                    return sock.sendMessage(from, {
+                    estatisticas.registrarEnvio()
+                    return gestorEnvio.enviarMensagem(from, {
                         text: `📝 *FAZER ORÇAMENTO*\n\n` +
                               `Em breve você será atendido pelo atendente *${ATENDENTES.orcamento}*.\n\n` +
                               `Para adiantar, informe:\n` +
@@ -459,41 +752,49 @@ async function startBot() {
                               `• Produto desejado e quantidade\n` +
                               `• E/ou qualquer dúvida que tenha\n\n` +
                               `🏠 Digite *MENU* para voltar às opções principais.`
-                    })
+                    }, 'texto')
 
                 case '2':
                     estado.etapa = 'aguardando_atendente'
                     saveEstadoCliente(from, estado)
 
-                    return sock.sendMessage(from, {
+                    estatisticas.registrarEnvio()
+                    return gestorEnvio.enviarMensagem(from, {
                         text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
                               `Em breve você será atendido pelo atendente *${ATENDENTES.geral}*.\n\n` +
                               `Para adiantar, informe:\n` +
                               `• Nome completo\n` +
                               `• E/ou qualquer dúvida que tenha\n\n` +
                               `🏠 Digite *MENU* para voltar às opções principais.`
-                    })
+                    }, 'texto')
 
-                  case '3':
-                   return sock.sendMessage(from, {
-                       text: `📋 *NOSSO CATÁLOGO*\n\n` +
-                             `🌐 Acesse nosso catálogo completo:\n` +
-                             `https://wa.me/c/5527999975339\n\n` +
-                             `Ou nos siga no Instagram:\n` +
-                             `📸 @cacrieartes\n\n` +
-                             `🏠 Digite *MENU* para voltar.`
-                   })
+                case '3':
+                    estatisticas.registrarEnvio()
+                    return gestorEnvio.enviarMensagem(from, {
+                        text: `📋 *NOSSO CATÁLOGO*\n\n` +
+                              `🌐 Acesse nosso catálogo completo:\n` +
+                              `https://wa.me/c/5527999975339\n\n` +
+                              `Ou nos siga no Instagram:\n` +
+                              `📸 @cacrieartes\n\n` +
+                              `🏠 Digite *MENU* para voltar.`
+                    }, 'texto')
 
                 default:
-                    return sock.sendMessage(from, {
+                    estatisticas.registrarEnvio()
+                    return gestorEnvio.enviarMensagem(from, {
                         text: '❌ *Opção inválida*\n\nDigite *1* para orçamento ou *2* para acompanhamento.'
-                    })
+                    }, 'erro')
             }
         }
     })
 }
 
-// Limpeza automática de sessões antigas (24h) e flags de resgate
+setInterval(() => {
+    if (ANTI_BAN_CONFIG.LOG_DELAYS) {
+        console.log('📈 Sistema Anti-Ban em execução...')
+    }
+}, 300000)
+
 setInterval(() => {
     try {
         const clientes = getAllClientes()
@@ -507,7 +808,6 @@ setInterval(() => {
             const ultimaInteracao = new Date(estado.ultimaInteracao)
             const horasInativo = (agora - ultimaInteracao) / (1000 * 60 * 60)
 
-            // Remove sessões inativas há mais de 24 horas
             if (horasInativo > 24) {
                 if (deleteEstadoCliente(numero)) {
                     sessõesRemovidas++
@@ -517,8 +817,7 @@ setInterval(() => {
                     )
                 }
             }
-            // Limpa o flag de resgate após 30 minutos da última interação
-            else if (estado.resgatado && horasInativo > 0.5) { // 0.5 horas = 30 minutos
+            else if (estado.resgatado && horasInativo > 0.5) {
                 delete estado.resgatado
                 if (estado.ultimoResgate) delete estado.ultimoResgate
                 saveEstadoCliente(numero, estado)
@@ -537,6 +836,6 @@ setInterval(() => {
     } catch (error) {
         console.error('❌ Erro na limpeza automática:', error)
     }
-}, 60 * 60 * 1000) // Executa a cada 1 hora
+}, 60 * 60 * 1000)
 
 startBot()
