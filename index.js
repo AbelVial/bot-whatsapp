@@ -17,7 +17,7 @@ const ESTADOS_NAO_LER = ['aguardando_atendente', 'fora_horario']
 
 const HORARIO_ATENDIMENTO = {
     0: null,
-    1: { inicio: '09:00', fim: '18:00' },
+    1: { inicio: '12:00', fim: '18:00' },
     2: { inicio: '09:00', fim: '18:00' },
     3: { inicio: '09:00', fim: '18:00' },
     4: { inicio: '09:00', fim: '18:00' },
