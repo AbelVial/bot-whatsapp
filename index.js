@@ -23,10 +23,13 @@ const PEDIDOS_FILE = './pedidos.json'
 const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
 
 const HORARIO_ATENDIMENTO = {
-    dias: [1, 2, 3, 4, 5, 6], // Segunda a Sábado
-    inicio: 9,
-    fim: 18,
-    sabadoFim: 13 // Horário especial para sábado
+    0: { inicio: '09:00', fim: '00:00' }, // Domingo (fechado)
+    1: { inicio: '09:00', fim: '18:00' }, // Segunda
+    2: { inicio: '09:00', fim: '18:00' }, // Terça
+    3: { inicio: '09:00', fim: '18:00' }, // Quarta
+    4: { inicio: '09:00', fim: '18:00' }, // Quinta
+    5: { inicio: '09:00', fim: '18:00' }, // Sexta
+    6: { inicio: '09:00', fim: '13:00' }  // Sábado
 }
 
 const ATENDENTES = {
@@ -42,23 +45,20 @@ const ATENDENTES = {
 
 function dentroHorario() {
     const agora = new Date()
-    const diaSemana = agora.getDay()
-    const hora = agora.getHours()
-    const minutos = agora.getMinutes()
-    const horaAtual = hora + (minutos / 60)
+    const dia = agora.getDay()
+    const horarioDia = HORARIO_ATENDIMENTO[dia]
 
-    if (!HORARIO_ATENDIMENTO.dias.includes(diaSemana)) {
-        return false
-    }
+    // Dia não atende
+    if (!horarioDia) return false
 
-    // Horário especial para sábado
-    if (diaSemana === 6) { // Sábado
-        return horaAtual >= HORARIO_ATENDIMENTO.inicio &&
-            horaAtual < HORARIO_ATENDIMENTO.sabadoFim
-    }
+    const [hIni, mIni] = horarioDia.inicio.split(':').map(Number)
+    const [hFim, mFim] = horarioDia.fim.split(':').map(Number)
 
-    return horaAtual >= HORARIO_ATENDIMENTO.inicio &&
-        horaAtual < HORARIO_ATENDIMENTO.fim
+    const minutosAtual = agora.getHours() * 60 + agora.getMinutes()
+    const minutosInicio = hIni * 60 + mIni
+    const minutosFim = hFim * 60 + mFim
+
+    return minutosAtual >= minutosInicio && minutosAtual < minutosFim
 }
 
 function getJSONFile(filename, defaultData = {}) {
@@ -123,6 +123,7 @@ function resumoCarrinho(carrinho) {
 
 function formatarHorarioAtendimento(detalhado = false) {
     const diasMap = {
+        0: 'Domingo',
         1: 'Segunda-feira',
         2: 'Terça-feira',
         3: 'Quarta-feira',
@@ -131,17 +132,18 @@ function formatarHorarioAtendimento(detalhado = false) {
         6: 'Sábado'
     }
 
-    const diasStr = HORARIO_ATENDIMENTO.dias.map(d => diasMap[d]).join('\n• ')
+    let texto = ''
 
-    if (detalhado) {
-        return `• ${diasStr}\n\n` +
-            `🕘 *Horários:*\n` +
-            `Segunda a Sexta: ${HORARIO_ATENDIMENTO.inicio.toString().padStart(2, '0')}:00 às ${HORARIO_ATENDIMENTO.fim.toString().padStart(2, '0')}:00\n` +
-            `Sábado: ${HORARIO_ATENDIMENTO.inicio.toString().padStart(2, '0')}:00 às ${HORARIO_ATENDIMENTO.sabadoFim.toString().padStart(2, '0')}:00`
+    for (const dia in HORARIO_ATENDIMENTO) {
+        const config = HORARIO_ATENDIMENTO[dia]
+        if (!config) {
+            texto += `${diasMap[dia]}: Fechado\n`
+        } else {
+            texto += `${diasMap[dia]}: ${config.inicio} às ${config.fim}\n`
+        }
     }
 
-    return `Segunda a Sexta: ${HORARIO_ATENDIMENTO.inicio.toString().padStart(2, '0')}:00 às ${HORARIO_ATENDIMENTO.fim.toString().padStart(2, '0')}:00\n` +
-        `Sábado: ${HORARIO_ATENDIMENTO.inicio.toString().padStart(2, '0')}:00 às ${HORARIO_ATENDIMENTO.sabadoFim.toString().padStart(2, '0')}:00`
+    return texto.trim()
 }
 
 function gerarNumeroPedido() {
