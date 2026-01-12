@@ -46,19 +46,18 @@ const ATENDENTES = {
 function dentroHorario() {
     const agora = new Date()
     const dia = agora.getDay()
-    const horarioDia = HORARIO_ATENDIMENTO[dia]
 
-    // Dia não atende
-    if (!horarioDia) return false
+    const config = HORARIO_ATENDIMENTO[dia]
+    if (!config) return false
 
-    const [hIni, mIni] = horarioDia.inicio.split(':').map(Number)
-    const [hFim, mFim] = horarioDia.fim.split(':').map(Number)
+    const [hIni, mIni] = config.inicio.split(':').map(Number)
+    const [hFim, mFim] = config.fim.split(':').map(Number)
 
     const minutosAtual = agora.getHours() * 60 + agora.getMinutes()
     const minutosInicio = hIni * 60 + mIni
     const minutosFim = hFim * 60 + mFim
 
-    return minutosAtual >= minutosInicio && minutosAtual < minutosFim
+    return minutosAtual >= minutosInicio && minutosAtual <= minutosFim
 }
 
 function getJSONFile(filename, defaultData = {}) {
