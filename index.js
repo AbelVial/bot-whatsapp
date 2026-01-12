@@ -17,7 +17,7 @@ const ESTADOS_HUMANOS = ['aguardando_atendente']
 const HORARIO_ATENDIMENTO = {
     0: null,
     1: { inicio: '08:00', fim: '18:00' },
-    2: { inicio: '09:00', fim: '18:00' },
+    2: { inicio: '00:00', fim: '18:00' },
     3: { inicio: '09:00', fim: '18:00' },
     4: { inicio: '09:00', fim: '18:00' },
     5: { inicio: '09:00', fim: '18:00' },
@@ -142,41 +142,66 @@ async function startBot() {
         }
 
         if (estado.etapa === 'inicio') {
-            await sock.sendMessage(from, {
-                text: `${getSaudacao()} Bem-vindo à *CrieArtes* 🎨`
-            })
+    const saudacao = getSaudacao()
 
-            estado.etapa = 'menu'
+    await sock.sendMessage(from, {
+        text: `${saudacao} *BEM-VINDO(A) À CRIEARTES PERSONALIZADOS!* 🎨\n\n` +
+            `Somos especialistas em transformar suas ideias em produtos únicos e personalizados com muita qualidade e criatividade! 💙\n\n` +
+            `📍 *Nossos canais oficiais:*\n` +
+            `📸 Instagram: @cacrieartes\n` +
+            `📦 Catálogo completo: https://wa.me/c/5527999975339\n\n`
+    })
+
+    estado.etapa = 'menu'
+    saveJSONFile(ESTADOS_FILE, estados)
+
+    return sock.sendMessage(from, {
+        text: `Como podemos ajudar você hoje? 🤔\n\n` +
+              `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
+              `   ↳ Solicite um orçamento personalizado\n\n` +
+              `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
+              `   ↳ Consulte o status do seu pedido\n\n` +
+              `🔢 *Digite o número da opção desejada:*`
+    })
+}
+
+
+        /* =========================
+   MENU PRINCIPAL - MELHORADO
+========================= */
+
+if (estado.etapa === 'menu') {
+    switch (texto) {
+
+        case '1': // FAZER ORÇAMENTO → HUMANO
+            estado.etapa = 'aguardando_atendente'
             saveJSONFile(ESTADOS_FILE, estados)
-        }
-
-        if (estado.etapa === 'menu') {
-            if (texto === '1') {
-                estado.etapa = 'aguardando_atendente'
-                saveJSONFile(ESTADOS_FILE, estados)
-
-                return sock.sendMessage(from, {
-                    text: `${saudacao} *BEM-VINDO(A) À CRIEARTES PERSONALIZADOS!* 🎨\n\n` +
-                        `Somos especialistas em transformar suas ideias em produtos únicos e personalizados com muita qualidade e criatividade! 💙\n\n` +
-                        `📍 *Nossos canais oficiais:*\n` +
-                        `📸 Instagram: @cacrieartes\n` +
-                        `📦 Catálogo completo: https://wa.me/c/5527999975339\n\n` 
-                })
-            }
-
-            if (texto === '2') {
-                estado.etapa = 'aguardando_atendente'
-                saveJSONFile(ESTADOS_FILE, estados)
-
-                return sock.sendMessage(from, {
-                    text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\nVocê será atendido por *${ATENDENTES.geral}* em instantes.\n\nPor favor, descreva sua necessidade:`
-                })
-            }
 
             return sock.sendMessage(from, {
-                text: 'Digite:\n1️⃣ Fazer orçamento\n2️⃣ Acompanhar pedido'
+                text:
+                    `📝 *FAZER ORÇAMENTO*\n\n` +
+                    `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
+                    `Por favor, descreva sua necessidade:`
             })
-        }
+
+        case '2': // ACOMPANHAR PEDIDO → HUMANO
+            estado.etapa = 'aguardando_atendente'
+            saveJSONFile(ESTADOS_FILE, estados)
+
+            return sock.sendMessage(from, {
+                text:
+                    `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
+                    `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
+                    `Por favor, descreva sua necessidade:`
+            })
+
+        default:
+            return sock.sendMessage(from, {
+                text: '❌ *Opção inválida*\n\nDigite *1* para orçamento ou *2* para acompanhamento.'
+            })
+    }
+}
+
     })
 }
 
