@@ -17,11 +17,11 @@ const ESTADOS_NAO_LER = ['aguardando_atendente', 'fora_horario']
 
 const HORARIO_ATENDIMENTO = {
     0: null,
-    1: { inicio: '12:00', fim: '18:00' },
-    2: { inicio: '09:00', fim: '18:00' },
-    3: { inicio: '09:00', fim: '18:00' },
-    4: { inicio: '09:00', fim: '18:00' },
-    5: { inicio: '09:00', fim: '18:00' },
+    1: { inicio: '09:00', fim: '17:00' },
+    2: { inicio: '09:00', fim: '17:00' },
+    3: { inicio: '09:00', fim: '17:00' },
+    4: { inicio: '09:00', fim: '17:00' },
+    5: { inicio: '09:00', fim: '17:00' },
     6: null
 }
 
@@ -184,7 +184,7 @@ async function startBot() {
           return sock.sendMessage(from, {
               text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
                     `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
-                    `📅 *Horários de atendimento: Seg-Sex 08-18:00*\n` +
+                    `📅 *Horários de atendimento: Seg-Sex 09:00 as 17:00*\n` +
                     `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                     `Agradecemos sua compreensão! 💙`
           })
