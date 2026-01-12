@@ -519,6 +519,12 @@ async function startBot() {
         if (!msg.message || msg.key.fromMe) return
 
         const from = msg.key.remoteJid
+        
+        const texto = (
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            ''
+        ).trim().toUpperCase()
 
         if (texto === '/ANTIBANSTATS') {
             if (!ADMINS.includes(from)) {
@@ -585,12 +591,6 @@ async function startBot() {
                 text: `✅ Sistema Anti-Ban ${status}` 
             }, 'texto')
         }
-
-        const texto = (
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            ''
-        ).trim().toUpperCase()
 
         if (isWhitelisted(from) && !ADMINS.includes(from)) {
             console.log(`⭐ Número na whitelist (ignorado): ${from.split('@')[0]}`)
