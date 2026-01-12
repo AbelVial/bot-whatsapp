@@ -327,8 +327,11 @@ async function startBot() {
             console.log(`   Etapa: ${estado.etapa}, Carrinho: ${estado.carrinho.length} itens`)
 
             // 👁️ MARCAR COMO LIDA SOMENTE SE FOR BOT
-            if (!ESTADOS_HUMANOS.includes(estado.etapa)) {
-                await marcarComoLida(sock, msg)
+            const ESTADOS_HUMANOS = ['aguardando_atendente']
+        
+            if (ESTADOS_HUMANOS.includes(estado.etapa)) {
+                console.log(`👤 Mensagem aguardando atendente: ${from}`)
+                return
             }
             
             /* =========================
@@ -575,7 +578,7 @@ async function startBot() {
                         })
 
                     case '2':
-                        estado.etapa = 'acompanhar_pedido'
+                        estado.etapa = 'aguardando_atendente'
                         saveJSONFile(ESTADOS_FILE, estados)
                     
                         return sock.sendMessage(from, {
@@ -638,22 +641,6 @@ async function startBot() {
                                 `🔢 Digite o número da opção:`
                         })
                 }
-            }
-
-            /* =========================
-               ACOMPANHAR PEDIDO - MELHORADO
-            ========================= */
-
-            if (estado.etapa === 'acompanhar_pedido') {
-                estado.etapa = 'aguardando_atendente'
-                saveJSONFile(ESTADOS_FILE, estados)
-            
-                return sock.sendMessage(from, {
-                    text:
-                        `👤 *ATENDIMENTO HUMANO*\n\n` +
-                        `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
-                        `Por favor, descreva sua necessidade:`
-                })
             }
 
             /* =========================
