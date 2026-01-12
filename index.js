@@ -136,7 +136,6 @@ async function startBot() {
                 text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
                         `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
                         `📅 *Horários de atendimento:*\n` +
-                        `${formatarHorarioAtendimento()}\n\n` +
                         `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                         `Agradecemos sua compreensão! 💙`
             })
