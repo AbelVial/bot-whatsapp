@@ -1,5 +1,3 @@
-const NUMERO_TESTE = '5527997600138@s.whatsapp.net'
-
 import makeWASocket, {
     useMultiFileAuthState,
     DisconnectReason
@@ -18,9 +16,25 @@ import {
    CONFIGURAÇÕES AVANÇADAS
 ========================= */
 
+const NUMERO_TESTE = '5527997600138@s.whatsapp.net'
+
+const ESTADOS_HUMANOS = [
+    'atendente_humano',
+    'aguardando_atendente',
+    'pedido_encaminhado'
+]
+
 const ESTADOS_FILE = './estados.json'
 const PEDIDOS_FILE = './pedidos.json'
 const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
+
+async function marcarComoLida(sock, msg) {
+    try {
+        await sock.readMessages([msg.key])
+    } catch (error) {
+        console.error('Erro ao marcar como lida:', error)
+    }
+}
 
 const HORARIO_ATENDIMENTO = {
     0: { inicio: '09:00', fim: '23:59' }, // Domingo (fechado)
@@ -40,7 +54,7 @@ const ATENDENTES = {
 }
 
 /* =========================
-   FUNÇÕES UTILITÁRIAS MELHORADAS
+   FUNÇÕES UTILITÁRIAS
 ========================= */
 
 function dentroHorario() {
@@ -289,7 +303,9 @@ async function startBot() {
                 msg.message.extendedTextMessage?.text ||
                 msg.message.buttonsResponseMessage?.selectedButtonId ||
                 ''
-
+            // 👁️ Marca como lida automaticamente (modo BOT)
+            await marcarComoLida(sock, msg)
+            
             const estados = getJSONFile(ESTADOS_FILE)
 
             if (!estados[from]) {
@@ -310,6 +326,11 @@ async function startBot() {
             console.log(`\n📨 [${new Date().toLocaleTimeString('pt-BR')}] ${from.split('@')[0]}: ${texto.substring(0, 50)}...`)
             console.log(`   Etapa: ${estado.etapa}, Carrinho: ${estado.carrinho.length} itens`)
 
+            // 👁️ MARCAR COMO LIDA SOMENTE SE FOR BOT
+            if (!ESTADOS_HUMANOS.includes(estado.etapa)) {
+                await marcarComoLida(sock, msg)
+            }
+            
             /* =========================
                COMANDOS INTERNOS (ADMIN)
             ========================= */
