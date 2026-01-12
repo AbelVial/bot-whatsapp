@@ -431,6 +431,7 @@ async function startBot() {
                         `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                         `Agradecemos sua compreensão! 💙`
                 })
+                return
             }
 
             /* =========================
