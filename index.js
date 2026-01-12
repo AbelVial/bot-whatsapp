@@ -519,12 +519,25 @@ async function startBot() {
         if (!msg.message || msg.key.fromMe) return
 
         const from = msg.key.remoteJid
-        
+
+        if (isWhitelisted(from) && !ADMINS.includes(from)) {
+            console.log(`⭐ Número na whitelist (ignorado): ${from.split('@')[0]}`)
+            return
+        }
+
         const texto = (
             msg.message.conversation ||
             msg.message.extendedTextMessage?.text ||
             ''
         ).trim().toUpperCase()
+
+        const estado = getEstadoCliente(from)
+        estado.ultimaInteracao = new Date().toISOString()
+        estado.resgatado = false
+
+        if (podeMarcarComoLida(estado)) {
+            await marcarComoLida(sock, msg)
+        }
 
         if (texto === '/ANTIBANSTATS') {
             if (!ADMINS.includes(from)) {
@@ -590,19 +603,6 @@ async function startBot() {
             return gestorEnvio.enviarMensagem(from, { 
                 text: `✅ Sistema Anti-Ban ${status}` 
             }, 'texto')
-        }
-
-        if (isWhitelisted(from) && !ADMINS.includes(from)) {
-            console.log(`⭐ Número na whitelist (ignorado): ${from.split('@')[0]}`)
-            return
-        }
-
-        const estado = getEstadoCliente(from)
-        estado.ultimaInteracao = new Date().toISOString()
-        estado.resgatado = false
-
-        if (podeMarcarComoLida(estado)) {
-            await marcarComoLida(sock, msg)
         }
 
         if (texto === 'MENU') {
