@@ -34,6 +34,11 @@ const ATENDENTES = {
     orcamento: process.env.ATENDENTE_ORCAMENTO || 'Cristiane'
 }
 
+const RESGATE_CONFIG = {
+    TEMPO_ESPERA_MINUTOS: 5, // Tempo para considerar que o cliente parou
+    MENSAGEM_RESGATE: "Oi 😊 ainda posso te ajudar?\nDigite MENU para ver as opções."
+}
+
 /* =========================
    UTILITÁRIOS
 ========================= */
@@ -95,6 +100,50 @@ function isWhitelisted(numero) {
 }
 
 /* =========================
+   SISTEMA DE RESGATE
+========================= */
+
+function configurarSistemaResgate(sock) {
+    setInterval(async () => {
+        try {
+            const estados = getJSONFile(ESTADOS_FILE)
+            const agora = new Date()
+            let modificado = false
+
+            for (const [numero, estado] of Object.entries(estados)) {
+                // Verifica se o cliente está no menu e inativo
+                if (estado.etapa === 'menu' && estado.ultimaInteracao) {
+                    const ultimaInteracao = new Date(estado.ultimaInteracao)
+                    const minutosInativo = (agora - ultimaInteracao) / (1000 * 60)
+
+                    // Se passou o tempo configurado e ainda não foi resgatado
+                    if (minutosInativo >= RESGATE_CONFIG.TEMPO_ESPERA_MINUTOS && !estado.resgatado) {
+                        
+                        // Marca como resgatado para não enviar múltiplas vezes
+                        estado.resgatado = true
+                        estado.ultimoResgate = agora.toISOString()
+                        modificado = true
+
+                        // Envia a mensagem de resgate
+                        await sock.sendMessage(numero, {
+                            text: RESGATE_CONFIG.MENSAGEM_RESGATE
+                        })
+
+                        console.log(`🔄 Resgate enviado para: ${numero.split('@')[0]} (${minutosInativo.toFixed(1)}min inativo)`)
+                    }
+                }
+            }
+
+            if (modificado) {
+                saveJSONFile(ESTADOS_FILE, estados)
+            }
+        } catch (error) {
+            console.error('❌ Erro no sistema de resgate:', error)
+        }
+    }, 60 * 1000) // Verifica a cada 1 minuto
+}
+
+/* =========================
    BOT
 ========================= */
 
@@ -120,6 +169,7 @@ async function startBot() {
 
         if (connection === 'open') {
             console.log('✅ Bot conectado')
+            configurarSistemaResgate(sock) // Inicia o sistema de resgate
         }
     })
 
@@ -151,6 +201,9 @@ async function startBot() {
 
         const estado = estados[from]
         estado.ultimaInteracao = new Date().toISOString()
+        
+        // Resetar o flag de resgate quando o usuário interage
+        estado.resgatado = false
 
          if (podeMarcarComoLida(estado)) {
              await marcarComoLida(sock, msg)
@@ -342,7 +395,7 @@ async function startBot() {
     })
 }
 
-// Limpeza automática de sessões antigas (24h)
+// Limpeza automática de sessões antigas (24h) e flags de resgate
 setInterval(() => {
     try {
         const estados = getJSONFile(ESTADOS_FILE)
@@ -363,6 +416,17 @@ setInterval(() => {
                 console.log(
                     `🧹 Sessão removida: ${numero.split('@')[0]} ` +
                     `(${horasInativo.toFixed(1)}h inativo)`
+                )
+            }
+            // Limpa o flag de resgate após 30 minutos da última interação
+            else if (estado.resgatado && horasInativo > 0.5) { // 0.5 horas = 30 minutos
+                delete estado.resgatado
+                if (estado.ultimoResgate) delete estado.ultimoResgate
+                modificado = true
+                
+                console.log(
+                    `🔄 Flag de resgate removido: ${numero.split('@')[0]} ` +
+                    `(${horasInativo.toFixed(1)}h desde última interação)`
                 )
             }
         }
