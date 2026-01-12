@@ -1,3 +1,5 @@
+const NUMERO_TESTE = '5527997600138@s.whatsapp.net'
+
 import makeWASocket, {
     useMultiFileAuthState,
     DisconnectReason
@@ -273,6 +275,15 @@ async function startBot() {
             if (!msg.message || msg.key.fromMe) return
 
             const from = msg.key.remoteJid
+            
+            // =========================
+            // BOT ATIVO APENAS PARA TESTE
+            // =========================
+            if (from !== NUMERO_TESTE) {
+                // Não responde, não cria estado, não executa menu
+                return
+            }
+            
             const texto = msg.message.conversation ||
                 msg.message.extendedTextMessage?.text ||
                 msg.message.buttonsResponseMessage?.selectedButtonId ||
