@@ -23,7 +23,7 @@ const PEDIDOS_FILE = './pedidos.json'
 const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
 
 const HORARIO_ATENDIMENTO = {
-    0: { inicio: '09:00', fim: '00:00' }, // Domingo (fechado)
+    0: { inicio: '09:00', fim: '23:59' }, // Domingo (fechado)
     1: { inicio: '09:00', fim: '18:00' }, // Segunda
     2: { inicio: '09:00', fim: '18:00' }, // Terça
     3: { inicio: '09:00', fim: '18:00' }, // Quarta
