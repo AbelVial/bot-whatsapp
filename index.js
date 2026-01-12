@@ -152,7 +152,11 @@ async function startBot() {
                 saveJSONFile(ESTADOS_FILE, estados)
 
                 return sock.sendMessage(from, {
-                    text: `📝 *FAZER ORÇAMENTO*\n\nVocê será atendido por *${ATENDENTES.geral}* em instantes.\n\nPor favor, descreva sua necessidade:`
+                    text: `${saudacao} *BEM-VINDO(A) À CRIEARTES PERSONALIZADOS!* 🎨\n\n` +
+                        `Somos especialistas em transformar suas ideias em produtos únicos e personalizados com muita qualidade e criatividade! 💙\n\n` +
+                        `📍 *Nossos canais oficiais:*\n` +
+                        `📸 Instagram: @cacrieartes\n` +
+                        `📦 Catálogo completo: https://wa.me/c/5527999975339\n\n` 
                 })
             }
 
