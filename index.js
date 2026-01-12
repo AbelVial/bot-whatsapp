@@ -65,6 +65,10 @@ async function marcarComoLida(sock, msg) {
     await sock.readMessages([msg.key])
 }
 
+function podeMarcarComoLida(estado) {
+    return !ESTADOS_HUMANOS.includes(estado.etapa)
+}
+
 function getSaudacao() {
     const h = new Date().getHours()
     if (h < 12) return '☀️ Bom dia!'
@@ -121,6 +125,10 @@ async function startBot() {
 
         const estado = estados[from]
         estado.ultimaInteracao = new Date().toISOString()
+
+         if (podeMarcarComoLida(estado)) {
+             await marcarComoLida(sock, msg)
+         }
 
         /* =========================
            COMANDOS GLOBAIS
