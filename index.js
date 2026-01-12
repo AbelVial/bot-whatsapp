@@ -164,23 +164,23 @@ async function startBot() {
         ========================= */
 
         if (!dentroHorario() && estado.etapa === 'inicio') {
-            const msgs = getJSONFile(MENSAGENS_FORA_HORARIO, [])
-            msgs.push({ cliente: from, texto, data: new Date().toISOString() })
-            saveJSONFile(MENSAGENS_FORA_HORARIO, msgs)
-
-            estado.etapa = 'fora_horario'
-            saveJSONFile(ESTADOS_FILE, estados)
-
-            return sock.sendMessage(from, {
-                text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
-                      `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
-                      `📅 *Horários de atendimento: Seg-Sex 08-18:00*\n` +
-                      `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
-                      `Agradecemos sua compreensão! 💙`
-            })
-        }
-
-       await marcarComoLida(sock, msg)
+          await marcarComoLida(sock, msg) 
+      
+          const msgs = getJSONFile(MENSAGENS_FORA_HORARIO, [])
+          msgs.push({ cliente: from, texto, data: new Date().toISOString() })
+          saveJSONFile(MENSAGENS_FORA_HORARIO, msgs)
+      
+          estado.etapa = 'fora_horario'
+          saveJSONFile(ESTADOS_FILE, estados)
+      
+          return sock.sendMessage(from, {
+              text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
+                    `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
+                    `📅 *Horários de atendimento: Seg-Sex 08-18:00*\n` +
+                    `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
+                    `Agradecemos sua compreensão! 💙`
+          })
+      }
 
         /* =========================
            INÍCIO
