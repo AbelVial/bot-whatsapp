@@ -577,30 +577,11 @@ async function startBot() {
                     case '2':
                         estado.etapa = 'acompanhar_pedido'
                         saveJSONFile(ESTADOS_FILE, estados)
-
-                        // Verificar se cliente tem pedidos anteriores
-                        const pedidosCliente = getJSONFile(PEDIDOS_FILE, [])
-                            .filter(p => p.cliente === from)
-                            .slice(0, 3)
-
-                        let textoPedidos = ''
-                        if (pedidosCliente.length > 0) {
-                            textoPedidos = `\n📋 *Seus últimos pedidos:*\n`
-                            pedidosCliente.forEach(pedido => {
-                                textoPedidos += `• ${pedido.id} - ${new Date(pedido.data).toLocaleDateString('pt-BR')}\n`
-                            })
-                            textoPedidos += `\nDigite o número do pedido ou *NOVO* para novo acompanhamento:`
-                        }
-
+                    
                         return sock.sendMessage(from, {
                             text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
-                                `Para consultar o status do seu pedido, informe:\n\n` +
-                                `🔢 *Número do pedido* (ex: PED240101001)\n` +
-                                `📧 *E-mail utilizado na compra*\n` +
-                                `📱 *Seu telefone*\n\n` +
-                                `👤 *Atendente:* ${ATENDENTES.acompanhamento}\n` +
-                                `${textoPedidos}\n\n` +
-                                `🔄 Digite *VOLTAR* para menu anterior`
+                                  `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
+                                  `Por favor, descreva sua necessidade:`
                         })
 
                     default:
@@ -664,70 +645,15 @@ async function startBot() {
             ========================= */
 
             if (estado.etapa === 'acompanhar_pedido') {
-                if (texto.toUpperCase() === 'NOVO') {
-                    return sock.sendMessage(from, {
-                        text: `📝 *NOVO ACOMPANHAMENTO*\n\n` +
-                            `Por favor, informe:\n\n` +
-                            `🔢 *Número do pedido* OU\n` +
-                            `📧 *E-mail utilizado* OU\n` +
-                            `📱 *Seu telefone*\n\n` +
-                            `*Exemplo:* PED240101001\n\n` +
-                            `🔄 Digite *VOLTAR* para cancelar`
-                    })
-                }
-
-                // Buscar pedido
-                const pedido = buscarPedido(texto)
-
-                if (pedido) {
-                    let statusEmoji = '🟡'
-                    let statusTexto = 'Em análise'
-
-                    switch (pedido.status) {
-                        case 'aprovado':
-                            statusEmoji = '🟢';
-                            statusTexto = 'Aprovado';
-                            break
-                        case 'produção':
-                            statusEmoji = '🔧';
-                            statusTexto = 'Em produção';
-                            break
-                        case 'pronto':
-                            statusEmoji = '✅';
-                            statusTexto = 'Pronto para envio';
-                            break
-                        case 'enviado':
-                            statusEmoji = '🚚';
-                            statusTexto = 'Enviado';
-                            break
-                        case 'entregue':
-                            statusEmoji = '📦';
-                            statusTexto = 'Entregue';
-                            break
-                    }
-
-                    return sock.sendMessage(from, {
-                        text: `📦 *PEDIDO ${pedido.id}*\n\n` +
-                            `📅 Data: ${new Date(pedido.data).toLocaleDateString('pt-BR')}\n` +
-                            `📊 Status: ${statusEmoji} ${statusTexto}\n` +
-                            `💰 Valor: R$ ${pedido.total.toFixed(2)}\n` +
-                            `👤 Atendente: ${pedido.atendente}\n\n` +
-                            `📋 *Itens:*\n${pedido.itens.map(item => 
-                                  `• ${item.qtd}x ${item.nome}`
-                              ).join('\n')}\n\n` +
-                            `ℹ️ Para mais detalhes, fale com *${ATENDENTES.acompanhamento}*`
-                    })
-                } else {
-                    // Se não encontrou, encaminha para atendente
-                    console.log(`🔍 Pedido não encontrado: ${texto} para ${from}`)
-
-                    return sock.sendMessage(from, {
-                        text: `🔍 *PEDIDO NÃO ENCONTRADO*\n\n` +
-                            `Não localizamos o pedido "${texto}" em nosso sistema.\n\n` +
-                            `📞 *${ATENDENTES.acompanhamento}* já foi notificado(a) e entrará em contato em instantes para ajudá-lo(a).\n\n` +
-                            `Agradecemos sua paciência! 💙`
-                    })
-                }
+                estado.etapa = 'aguardando_atendente'
+                saveJSONFile(ESTADOS_FILE, estados)
+            
+                return sock.sendMessage(from, {
+                    text:
+                        `👤 *ATENDIMENTO HUMANO*\n\n` +
+                        `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
+                        `Por favor, descreva sua necessidade:`
+                })
             }
 
             /* =========================
