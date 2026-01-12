@@ -413,7 +413,7 @@ async function startBot() {
             const horarioAtual = dentroHorario()
 
             if (!horarioAtual && estado.etapa === 'inicio') {
-                // Salvar mensagem fora do horário
+
                 const mensagens = getJSONFile(MENSAGENS_FORA_HORARIO, [])
                 mensagens.push({
                     cliente: from,
@@ -422,7 +422,11 @@ async function startBot() {
                     respondido: false
                 })
                 saveJSONFile(MENSAGENS_FORA_HORARIO, mensagens)
-
+            
+                // 🔑 MUDA O ESTADO AQUI
+                estado.etapa = 'fora_horario_mensagem'
+                saveJSONFile(ESTADOS_FILE, estados)
+            
                 await sock.sendMessage(from, {
                     text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
                         `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
@@ -431,6 +435,21 @@ async function startBot() {
                         `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                         `Agradecemos sua compreensão! 💙`
                 })
+                return
+            }
+
+            if (!horarioAtual && estado.etapa === 'fora_horario_mensagem') {
+                // Apenas salva, NÃO responde
+                const mensagens = getJSONFile(MENSAGENS_FORA_HORARIO, [])
+                mensagens.push({
+                    cliente: from,
+                    mensagem: texto,
+                    data: new Date().toISOString(),
+                    respondido: false
+                })
+                saveJSONFile(MENSAGENS_FORA_HORARIO, mensagens)
+            
+                console.log(`📩 Mensagem fora do horário salva de ${from}`)
                 return
             }
 
