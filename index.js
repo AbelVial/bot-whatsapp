@@ -25,8 +25,8 @@ const HORARIO_ATENDIMENTO = {
 }
 
 const ATENDENTES = {
-    geral: process.env.ATENDENTE_GERAL,
-    orcamento: process.env.ATENDENTE_ORCAMENTO
+    geral: process.env.ATENDENTE_GERAL || 'Cristiane',
+    orcamento: process.env.ATENDENTE_ORCAMENTO || 'Cristiane'
 }
 
 /* =========================
@@ -108,7 +108,11 @@ async function startBot() {
         const from = msg.key.remoteJid
         if (from !== NUMERO_TESTE) return
 
-        const texto = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
+        const texto = (
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            ''
+        ).trim().toUpperCase()
 
         const estados = getJSONFile(ESTADOS_FILE)
         if (!estados[from]) {
@@ -118,12 +122,48 @@ async function startBot() {
         const estado = estados[from]
         estado.ultimaInteracao = new Date().toISOString()
 
+        /* =========================
+           COMANDOS GLOBAIS
+        ========================= */
+
+        if (texto === 'MENU') {
+            estado.etapa = 'menu'
+            saveJSONFile(ESTADOS_FILE, estados)
+
+            return sock.sendMessage(from, {
+                text: `Como podemos ajudar você hoje? 🤔\n\n` +
+                      `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
+                      `   ↳ Solicite um orçamento personalizado\n\n` +
+                      `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
+                      `   ↳ Consulte o status do seu pedido\n\n` +
+                      `🔢 *Digite o número da opção desejada:*`
+            })
+        }
+
+        if (texto === 'ENCERRAR' || texto === 'FINALIZAR') {
+            estado.etapa = 'inicio'
+            saveJSONFile(ESTADOS_FILE, estados)
+
+            return sock.sendMessage(from, {
+                text: `✅ *Atendimento encerrado com sucesso!*\n\n` +
+                      `Se precisar de algo mais, é só enviar uma mensagem 😊`
+            })
+        }
+
+        /* =========================
+           BLOQUEIO HUMANO
+        ========================= */
+
         if (ESTADOS_HUMANOS.includes(estado.etapa)) {
-            console.log(`👤 Humano ativo: ${from}`)
+            console.log(`👤 Atendimento humano ativo: ${from}`)
             return
         }
 
         await marcarComoLida(sock, msg)
+
+        /* =========================
+           FORA DO HORÁRIO
+        ========================= */
 
         if (!dentroHorario() && estado.etapa === 'inicio') {
             const msgs = getJSONFile(MENSAGENS_FORA_HORARIO, [])
@@ -135,81 +175,81 @@ async function startBot() {
 
             return sock.sendMessage(from, {
                 text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
-                        `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
-                        `📅 *Horários de atendimento: Seg-Sex 08-18:00 *\n` +
-                        `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
-                        `Agradecemos sua compreensão! 💙`
+                      `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
+                      `📅 *Horários de atendimento: Seg-Sex 08-18:00*\n` +
+                      `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
+                      `Agradecemos sua compreensão! 💙`
             })
         }
 
+        /* =========================
+           INÍCIO
+        ========================= */
+
         if (estado.etapa === 'inicio') {
-    const saudacao = getSaudacao()
+            const saudacao = getSaudacao()
 
-    await sock.sendMessage(from, {
-        text: `${saudacao} *BEM-VINDO(A) À CRIEARTES PERSONALIZADOS!* 🎨\n\n` +
-            `Somos especialistas em transformar suas ideias em produtos únicos e personalizados com muita qualidade e criatividade! 💙\n\n` +
-            `📍 *Nossos canais oficiais:*\n` +
-            `📸 Instagram: @cacrieartes\n` +
-            `📦 Catálogo completo: https://wa.me/c/5527999975339\n\n`
-    })
+            await sock.sendMessage(from, {
+                text: `${saudacao} *BEM-VINDO(A) À CRIEARTES PERSONALIZADOS!* 🎨\n\n` +
+                      `Somos especialistas em transformar suas ideias em produtos únicos e personalizados com muita qualidade e criatividade! 💙\n\n` +
+                      `📍 *Nossos canais oficiais:*\n` +
+                      `📸 Instagram: @cacrieartes\n` +
+                      `📦 Catálogo completo: https://wa.me/c/5527999975339\n\n`
+            })
 
-    estado.etapa = 'menu'
-    saveJSONFile(ESTADOS_FILE, estados)
+            estado.etapa = 'menu'
+            saveJSONFile(ESTADOS_FILE, estados)
 
-    return sock.sendMessage(from, {
-        text: `Como podemos ajudar você hoje? 🤔\n\n` +
-              `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
-              `   ↳ Solicite um orçamento personalizado\n\n` +
-              `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-              `   ↳ Consulte o status do seu pedido\n\n` +
-              `🔢 *Digite o número da opção desejada:*`
-    })
-}
-
+            return sock.sendMessage(from, {
+                text: `Como podemos ajudar você hoje? 🤔\n\n` +
+                      `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
+                      `   ↳ Solicite um orçamento personalizado\n\n` +
+                      `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
+                      `   ↳ Consulte o status do seu pedido\n\n` +
+                      `🔢 *Digite o número da opção desejada:*`
+            })
+        }
 
         /* =========================
-   MENU PRINCIPAL - MELHORADO
-========================= */
+           MENU PRINCIPAL
+        ========================= */
 
-if (estado.etapa === 'menu') {
-    switch (texto) {
+        if (estado.etapa === 'menu') {
+            switch (texto) {
 
-        case '1': // FAZER ORÇAMENTO → HUMANO
-            estado.etapa = 'aguardando_atendente'
-            saveJSONFile(ESTADOS_FILE, estados)
+                case '1':
+                    estado.etapa = 'aguardando_atendente'
+                    saveJSONFile(ESTADOS_FILE, estados)
 
-          return sock.sendMessage(from, {
-                            text: `📝 *FAZER ORÇAMENTO*\n\n` +
-                                `Em breve você será atendido pelo atendente *${ATENDENTES.orcamento}*.\n\n` +
-                                `Para adiantar, informe:\n` +
-                                `• Nome completo\n` +
-                                `• Produto desejado e quantidade\n` +
-                                `• E/ou qualquer dúvida que tenha\n\n` +
-                                `Agradecemos sua preferência! 💙\n\n` +
-                                `🏠 Digite *MENU* para voltar às opções principais.`
-                        })
+                    return sock.sendMessage(from, {
+                        text: `📝 *FAZER ORÇAMENTO*\n\n` +
+                              `Em breve você será atendido pelo atendente *${ATENDENTES.orcamento}*.\n\n` +
+                              `Para adiantar, informe:\n` +
+                              `• Nome completo\n` +
+                              `• Produto desejado e quantidade\n` +
+                              `• E/ou qualquer dúvida que tenha\n\n` +
+                              `🏠 Digite *MENU* para voltar às opções principais.`
+                    })
 
-        case '2': // ACOMPANHAR PEDIDO → HUMANO
-            estado.etapa = 'aguardando_atendente'
-            saveJSONFile(ESTADOS_FILE, estados)
+                case '2':
+                    estado.etapa = 'aguardando_atendente'
+                    saveJSONFile(ESTADOS_FILE, estados)
 
-          return sock.sendMessage(from, {
-                            text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
-                                `Em breve você será atendido pelo atendente *${ATENDENTES.geral}*.\n\n` +
-                                `Para adiantar, informe:\n` +
-                                `• Nome completo\n` +
-                                `• E/ou qualquer dúvida que tenha\n\n` +
-                                `Agradecemos sua preferência! 💙\n\n` +
-                                `🏠 Digite *MENU* para voltar às opções principais.`
-                        })
+                    return sock.sendMessage(from, {
+                        text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
+                              `Em breve você será atendido pelo atendente *${ATENDENTES.geral}*.\n\n` +
+                              `Para adiantar, informe:\n` +
+                              `• Nome completo\n` +
+                              `• E/ou qualquer dúvida que tenha\n\n` +
+                              `🏠 Digite *MENU* para voltar às opções principais.`
+                    })
 
-        default:
-            return sock.sendMessage(from, {
-                text: '❌ *Opção inválida*\n\nDigite *1* para orçamento ou *2* para acompanhamento.'
-            })
-    }
-}
-
+                default:
+                    return sock.sendMessage(from, {
+                        text: '❌ *Opção inválida*\n\nDigite *1* para orçamento ou *2* para acompanhamento.'
+                    })
+            }
+        }
     })
 }
 
