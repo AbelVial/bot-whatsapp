@@ -16,7 +16,7 @@ const ESTADOS_HUMANOS = ['aguardando_atendente']
 
 const HORARIO_ATENDIMENTO = {
     0: null,
-    1: { inicio: '09:00', fim: '18:00' },
+    1: { inicio: '13:00', fim: '18:00' },
     2: { inicio: '09:00', fim: '18:00' },
     3: { inicio: '09:00', fim: '18:00' },
     4: { inicio: '09:00', fim: '18:00' },
