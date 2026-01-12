@@ -261,4 +261,37 @@ async function startBot() {
     })
 }
 
+// Limpeza automática de sessões antigas (24h)
+setInterval(() => {
+    try {
+        const estados = getJSONFile(ESTADOS_FILE)
+        const agora = new Date()
+        let modificado = false
+
+        for (const [numero, estado] of Object.entries(estados)) {
+            if (!estado.ultimaInteracao) continue
+
+            const ultimaInteracao = new Date(estado.ultimaInteracao)
+            const horasInativo = (agora - ultimaInteracao) / (1000 * 60 * 60)
+
+            // Remove sessões inativas há mais de 24 horas
+            if (horasInativo > 24) {
+                delete estados[numero]
+                modificado = true
+
+                console.log(
+                    `🧹 Sessão removida: ${numero.split('@')[0]} ` +
+                    `(${horasInativo.toFixed(1)}h inativo)`
+                )
+            }
+        }
+
+        if (modificado) {
+            saveJSONFile(ESTADOS_FILE, estados)
+        }
+    } catch (error) {
+        console.error('❌ Erro na limpeza automática:', error)
+    }
+}, 60 * 60 * 1000) // Executa a cada 1 hora
+
 startBot()
