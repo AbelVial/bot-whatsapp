@@ -135,7 +135,7 @@ async function startBot() {
             return sock.sendMessage(from, {
                 text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
                         `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
-                        `📅 *Horários de atendimento:*\n` +
+                        `📅 *Horários de atendimento: Seg-Sex 08-18:00 *\n` +
                         `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                         `Agradecemos sua compreensão! 💙`
             })
