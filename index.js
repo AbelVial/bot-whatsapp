@@ -303,8 +303,6 @@ async function startBot() {
                 msg.message.extendedTextMessage?.text ||
                 msg.message.buttonsResponseMessage?.selectedButtonId ||
                 ''
-            // 👁️ Marca como lida automaticamente (modo BOT)
-            await marcarComoLida(sock, msg)
             
             const estados = getJSONFile(ESTADOS_FILE)
 
@@ -322,17 +320,20 @@ async function startBot() {
             const estado = estados[from]
             estado.ultimaInteracao = new Date().toISOString()
 
-            // Log da interação
-            console.log(`\n📨 [${new Date().toLocaleTimeString('pt-BR')}] ${from.split('@')[0]}: ${texto.substring(0, 50)}...`)
-            console.log(`   Etapa: ${estado.etapa}, Carrinho: ${estado.carrinho.length} itens`)
-
-            // 👁️ MARCAR COMO LIDA SOMENTE SE FOR BOT
+            // 🔒 ESTADOS HUMANOS (não marcar como lida)
             const ESTADOS_HUMANOS = ['aguardando_atendente']
-        
+            
             if (ESTADOS_HUMANOS.includes(estado.etapa)) {
                 console.log(`👤 Mensagem aguardando atendente: ${from}`)
                 return
             }
+            
+            // 👁️ Marca como lida SOMENTE se for BOT
+            await marcarComoLida(sock, msg)
+
+            // Log da interação
+            console.log(`\n📨 [${new Date().toLocaleTimeString('pt-BR')}] ${from.split('@')[0]}: ${texto.substring(0, 50)}...`)
+            console.log(`   Etapa: ${estado.etapa}, Carrinho: ${estado.carrinho.length} itens`)
             
             /* =========================
                COMANDOS INTERNOS (ADMIN)
