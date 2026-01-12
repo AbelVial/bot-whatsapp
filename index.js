@@ -1,13 +1,14 @@
 import makeWASocket, { useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys'
 import P from 'pino'
 import fs from 'fs'
+import path from 'path'
 import qrcode from 'qrcode-terminal'
 
 /* =========================
    CONFIGURAÇÕES
 ========================= */
 
-const ESTADOS_FILE = './estados.json'
+const ESTADOS_DIR = './estados'
 const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
 const WHITELIST_FILE = './whitelist.json'
 
@@ -40,8 +41,77 @@ const RESGATE_CONFIG = {
 }
 
 /* =========================
-   UTILITÁRIOS
+   UTILITÁRIOS - ARQUIVOS INDIVIDUAIS
 ========================= */
+
+// Garante que o diretório de estados existe
+if (!fs.existsSync(ESTADOS_DIR)) {
+    fs.mkdirSync(ESTADOS_DIR, { recursive: true })
+}
+
+function getNumeroFile(numero) {
+    // Remove o @s.whatsapp.net e caracteres inválidos para nome de arquivo
+    const numeroLimpo = numero.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '')
+    return path.join(ESTADOS_DIR, `${numeroLimpo}.json`)
+}
+
+function getEstadoCliente(numero) {
+    const file = getNumeroFile(numero)
+    if (!fs.existsSync(file)) {
+        return { etapa: 'inicio', ultimaInteracao: new Date().toISOString() }
+    }
+    try {
+        return JSON.parse(fs.readFileSync(file, 'utf8'))
+    } catch (error) {
+        console.error(`❌ Erro ao ler estado do cliente ${numero}:`, error)
+        return { etapa: 'inicio', ultimaInteracao: new Date().toISOString() }
+    }
+}
+
+function saveEstadoCliente(numero, estado) {
+    const file = getNumeroFile(numero)
+    try {
+        fs.writeFileSync(file, JSON.stringify(estado, null, 2))
+    } catch (error) {
+        console.error(`❌ Erro ao salvar estado do cliente ${numero}:`, error)
+    }
+}
+
+function deleteEstadoCliente(numero) {
+    const file = getNumeroFile(numero)
+    if (fs.existsSync(file)) {
+        try {
+            fs.unlinkSync(file)
+            return true
+        } catch (error) {
+            console.error(`❌ Erro ao deletar estado do cliente ${numero}:`, error)
+        }
+    }
+    return false
+}
+
+function getAllClientes() {
+    const clientes = []
+    try {
+        const files = fs.readdirSync(ESTADOS_DIR)
+        for (const file of files) {
+            if (file.endsWith('.json')) {
+                const filePath = path.join(ESTADOS_DIR, file)
+                try {
+                    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+                    // Reconstruir o número do arquivo (adiciona @s.whatsapp.net)
+                    const numero = `55${file.replace('.json', '')}@s.whatsapp.net`
+                    clientes.push({ numero, estado: data })
+                } catch (error) {
+                    console.error(`❌ Erro ao ler arquivo ${file}:`, error)
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erro ao listar clientes:', error)
+    }
+    return clientes
+}
 
 function dentroHorario() {
     const agora = new Date()
@@ -64,15 +134,28 @@ function getJSONFile(file, def = {}) {
         fs.writeFileSync(file, JSON.stringify(def, null, 2))
         return def
     }
-    return JSON.parse(fs.readFileSync(file))
+    try {
+        return JSON.parse(fs.readFileSync(file, 'utf8'))
+    } catch (error) {
+        console.error(`❌ Erro ao ler arquivo ${file}:`, error)
+        return def
+    }
 }
 
 function saveJSONFile(file, data) {
-    fs.writeFileSync(file, JSON.stringify(data, null, 2))
+    try {
+        fs.writeFileSync(file, JSON.stringify(data, null, 2))
+    } catch (error) {
+        console.error(`❌ Erro ao salvar arquivo ${file}:`, error)
+    }
 }
 
 async function marcarComoLida(sock, msg) {
-    await sock.readMessages([msg.key])
+    try {
+        await sock.readMessages([msg.key])
+    } catch (error) {
+        console.error('❌ Erro ao marcar mensagem como lida:', error)
+    }
 }
 
 function podeMarcarComoLida(estado) {
@@ -106,11 +189,11 @@ function isWhitelisted(numero) {
 function configurarSistemaResgate(sock) {
     setInterval(async () => {
         try {
-            const estados = getJSONFile(ESTADOS_FILE)
+            const clientes = getAllClientes()
             const agora = new Date()
-            let modificado = false
+            let resgatesEnviados = 0
 
-            for (const [numero, estado] of Object.entries(estados)) {
+            for (const { numero, estado } of clientes) {
                 // Verifica se o cliente está no menu e inativo
                 if (estado.etapa === 'menu' && estado.ultimaInteracao) {
                     const ultimaInteracao = new Date(estado.ultimaInteracao)
@@ -122,20 +205,26 @@ function configurarSistemaResgate(sock) {
                         // Marca como resgatado para não enviar múltiplas vezes
                         estado.resgatado = true
                         estado.ultimoResgate = agora.toISOString()
-                        modificado = true
+                        
+                        // Salva o estado atualizado
+                        saveEstadoCliente(numero, estado)
 
                         // Envia a mensagem de resgate
-                        await sock.sendMessage(numero, {
-                            text: RESGATE_CONFIG.MENSAGEM_RESGATE
-                        })
-
-                        console.log(`🔄 Resgate enviado para: ${numero.split('@')[0]} (${minutosInativo.toFixed(1)}min inativo)`)
+                        try {
+                            await sock.sendMessage(numero, {
+                                text: RESGATE_CONFIG.MENSAGEM_RESGATE
+                            })
+                            resgatesEnviados++
+                            console.log(`🔄 Resgate enviado para: ${numero.split('@')[0]} (${minutosInativo.toFixed(1)}min inativo)`)
+                        } catch (error) {
+                            console.error(`❌ Erro ao enviar resgate para ${numero}:`, error)
+                        }
                     }
                 }
             }
 
-            if (modificado) {
-                saveJSONFile(ESTADOS_FILE, estados)
+            if (resgatesEnviados > 0) {
+                console.log(`📤 Total de resgates enviados: ${resgatesEnviados}`)
             }
         } catch (error) {
             console.error('❌ Erro no sistema de resgate:', error)
@@ -169,6 +258,7 @@ async function startBot() {
 
         if (connection === 'open') {
             console.log('✅ Bot conectado')
+            console.log(`📁 Diretório de estados: ${ESTADOS_DIR}`)
             configurarSistemaResgate(sock) // Inicia o sistema de resgate
         }
     })
@@ -194,15 +284,11 @@ async function startBot() {
             ''
         ).trim().toUpperCase()
 
-        const estados = getJSONFile(ESTADOS_FILE)
-        if (!estados[from]) {
-            estados[from] = { etapa: 'inicio', ultimaInteracao: new Date().toISOString() }
-        }
-
-        const estado = estados[from]
-        estado.ultimaInteracao = new Date().toISOString()
+        // Obtém estado individual do cliente
+        const estado = getEstadoCliente(from)
         
-        // Resetar o flag de resgate quando o usuário interage
+        // Atualiza timestamp da última interação e reseta flag de resgate
+        estado.ultimaInteracao = new Date().toISOString()
         estado.resgatado = false
 
          if (podeMarcarComoLida(estado)) {
@@ -215,7 +301,7 @@ async function startBot() {
 
         if (texto === 'MENU') {
             estado.etapa = 'menu'
-            saveJSONFile(ESTADOS_FILE, estados)
+            saveEstadoCliente(from, estado)
 
             return sock.sendMessage(from, {
                 text: `Como podemos ajudar você hoje? 🤔\n\n` +
@@ -229,7 +315,7 @@ async function startBot() {
 
         if (texto === 'ENCERRAR' || texto === 'FINALIZAR') {
             estado.etapa = 'inicio'
-            saveJSONFile(ESTADOS_FILE, estados)
+            saveEstadoCliente(from, estado)
 
             return sock.sendMessage(from, {
                 text: `✅ *Atendimento encerrado com sucesso!*\n\n` +
@@ -292,7 +378,6 @@ async function startBot() {
              })
          }
 
-
         /* =========================
            BLOQUEIO HUMANO
         ========================= */
@@ -313,7 +398,7 @@ async function startBot() {
           saveJSONFile(MENSAGENS_FORA_HORARIO, msgs)
       
           estado.etapa = 'fora_horario'
-          saveJSONFile(ESTADOS_FILE, estados)
+          saveEstadoCliente(from, estado)
       
           return sock.sendMessage(from, {
               text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
@@ -340,7 +425,7 @@ async function startBot() {
             })
 
             estado.etapa = 'menu'
-            saveJSONFile(ESTADOS_FILE, estados)
+            saveEstadoCliente(from, estado)
 
             return sock.sendMessage(from, {
                 text: `Como podemos ajudar você hoje? 🤔\n\n` +
@@ -361,7 +446,7 @@ async function startBot() {
 
                 case '1':
                     estado.etapa = 'aguardando_atendente'
-                    saveJSONFile(ESTADOS_FILE, estados)
+                    saveEstadoCliente(from, estado)
 
                     return sock.sendMessage(from, {
                         text: `📝 *FAZER ORÇAMENTO*\n\n` +
@@ -375,7 +460,7 @@ async function startBot() {
 
                 case '2':
                     estado.etapa = 'aguardando_atendente'
-                    saveJSONFile(ESTADOS_FILE, estados)
+                    saveEstadoCliente(from, estado)
 
                     return sock.sendMessage(from, {
                         text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
@@ -398,11 +483,12 @@ async function startBot() {
 // Limpeza automática de sessões antigas (24h) e flags de resgate
 setInterval(() => {
     try {
-        const estados = getJSONFile(ESTADOS_FILE)
+        const clientes = getAllClientes()
         const agora = new Date()
-        let modificado = false
+        let sessõesRemovidas = 0
+        let flagsRemovidos = 0
 
-        for (const [numero, estado] of Object.entries(estados)) {
+        for (const { numero, estado } of clientes) {
             if (!estado.ultimaInteracao) continue
 
             const ultimaInteracao = new Date(estado.ultimaInteracao)
@@ -410,19 +496,20 @@ setInterval(() => {
 
             // Remove sessões inativas há mais de 24 horas
             if (horasInativo > 24) {
-                delete estados[numero]
-                modificado = true
-
-                console.log(
-                    `🧹 Sessão removida: ${numero.split('@')[0]} ` +
-                    `(${horasInativo.toFixed(1)}h inativo)`
-                )
+                if (deleteEstadoCliente(numero)) {
+                    sessõesRemovidas++
+                    console.log(
+                        `🧹 Sessão removida: ${numero.split('@')[0]} ` +
+                        `(${horasInativo.toFixed(1)}h inativo)`
+                    )
+                }
             }
             // Limpa o flag de resgate após 30 minutos da última interação
             else if (estado.resgatado && horasInativo > 0.5) { // 0.5 horas = 30 minutos
                 delete estado.resgatado
                 if (estado.ultimoResgate) delete estado.ultimoResgate
-                modificado = true
+                saveEstadoCliente(numero, estado)
+                flagsRemovidos++
                 
                 console.log(
                     `🔄 Flag de resgate removido: ${numero.split('@')[0]} ` +
@@ -431,8 +518,8 @@ setInterval(() => {
             }
         }
 
-        if (modificado) {
-            saveJSONFile(ESTADOS_FILE, estados)
+        if (sessõesRemovidas > 0 || flagsRemovidos > 0) {
+            console.log(`📊 Limpeza: ${sessõesRemovidas} sessões removidas, ${flagsRemovidos} flags removidos`)
         }
     } catch (error) {
         console.error('❌ Erro na limpeza automática:', error)
