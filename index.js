@@ -90,8 +90,8 @@ function saveWhitelist(lista) {
 }
 
 function isWhitelisted(numero) {
-    const lista = getWhitelist()
-    return lista.includes(numero)
+    const lista = getJSONFile('./whitelist.json')
+    return !!lista[numero]
 }
 
 /* =========================
