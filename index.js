@@ -359,18 +359,14 @@ async function startBot() {
                 saveJSONFile(ESTADOS_FILE, estados)
                 return sock.sendMessage(from, {
                     text: `📋 *MENU PRINCIPAL - CRIEARTES*\n\n` +
-                        `Como podemos ajudar você hoje? 🤔\n\n` +
-                        `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
-                        `   ↳ Solicite um orçamento personalizado\n\n` +
-                        `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                        `   ↳ Consulte o status do seu pedido\n\n` +
-                        `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                        `   ↳ Atendimento humano personalizado\n\n` +
-                        `4️⃣ ℹ️ *INFORMAÇÕES DA LOJA*\n` +
-                        `   ↳ Conheça mais sobre nós\n\n` +
-                        `5️⃣ 🛒 *MEU CARRINHO*\n` +
-                        `   ↳ ${estado.carrinho.length} item(s) adicionado(s)\n\n` +
-                        `🔢 *Digite o número da opção desejada:*`
+                          `Como podemos ajudar você hoje? 🤔\n\n` +
+                          `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
+                          `   ↳ Solicite um orçamento personalizado\n\n` +
+                          `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
+                          `   ↳ Consulte o status do seu pedido\n\n` +
+                          `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
+                          `   ↳ Atendimento humano personalizado\n\n` +
+                          `🔢 *Digite o número da opção desejada:*`
                 })
             }
 
@@ -585,18 +581,14 @@ async function startBot() {
 
                 return sock.sendMessage(from, {
                     text: `📋 *MENU PRINCIPAL - CRIEARTES*\n\n` +
-                        `Como podemos ajudar você hoje? 🤔\n\n` +
-                        `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
-                        `   ↳ Solicite um orçamento personalizado\n\n` +
-                        `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                        `   ↳ Consulte o status do seu pedido\n\n` +
-                        `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                        `   ↳ Atendimento humano personalizado\n\n` +
-                        `4️⃣ ℹ️ *INFORMAÇÕES DA LOJA*\n` +
-                        `   ↳ Conheça mais sobre nós\n\n` +
-                        `5️⃣ 🛒 *MEU CARRINHO*\n` +
-                        `   ↳ ${estado.carrinho.length} item(s) adicionado(s)\n\n` +
-                        `🔢 *Digite o número da opção desejada:*`
+                              `Como podemos ajudar você hoje? 🤔\n\n` +
+                              `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
+                              `   ↳ Solicite um orçamento personalizado\n\n` +
+                              `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
+                              `   ↳ Consulte o status do seu pedido\n\n` +
+                              `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
+                              `   ↳ Atendimento humano personalizado\n\n` +
+                              `🔢 *Digite o número da opção desejada:*`
                 })
             }
 
