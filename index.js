@@ -296,7 +296,6 @@ async function startBot() {
                 estados[from] = {
                     etapa: 'inicio',
                     carrinho: [],
-                    atendente: null,
                     ultimaInteracao: new Date().toISOString(),
                     nomeCliente: '',
                     pedidos: [],
@@ -359,25 +358,12 @@ async function startBot() {
                 estado.etapa = 'menu'
                 saveJSONFile(ESTADOS_FILE, estados)
                 return sock.sendMessage(from, {
-                    text: `📋 *MENU PRINCIPAL - CRIEARTES*\n\n` +
-                          `Como podemos ajudar você hoje? 🤔\n\n` +
+                    text: `Como podemos ajudar você hoje? 🤔\n\n` +
                           `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                           `   ↳ Solicite um orçamento personalizado\n\n` +
                           `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                           `   ↳ Consulte o status do seu pedido\n\n` +
-                          `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                          `   ↳ Atendimento humano personalizado\n\n` +
                           `🔢 *Digite o número da opção desejada:*`
-                })
-            }
-
-            if (texto.toUpperCase() === 'ATENDENTE' || texto.toUpperCase() === 'AJUDA') {
-                estado.etapa = 'atendente_humano'
-                saveJSONFile(ESTADOS_FILE, estados)
-                return sock.sendMessage(from, {
-                    text: `👤 *ATENDIMENTO HUMANO*\n\n` +
-                        `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
-                        `Por favor, descreva sua necessidade:`
                 })
             }
 
@@ -481,17 +467,6 @@ async function startBot() {
                                 `🏠 Digite *MENU* para voltar às opções`
                         })
 
-                    case '3':
-                        return sock.sendMessage(from, {
-                            text: `📞 *CONTATO DIRETO*\n\n` +
-                                `Para atendimento imediato, entre em contato diretamente:\n\n` +
-                                `👤 *${ATENDENTES.geral}*\n` +
-                                `📱 ${ATENDENTES.whatsapp}\n\n` +
-                                `*Horário de resposta:*\n` +
-                                `${formatarHorarioAtendimento()}\n\n` +
-                                `🏠 Digite *MENU* para voltar às opções`
-                        })
-
                     case 'MENU':
                     case 'menu':
                         estado.etapa = 'menu_fora_horario'
@@ -500,13 +475,12 @@ async function startBot() {
                             text: `🎯 *OPÇÕES DISPONÍVEIS:*\n\n` +
                                 `1️⃣ 📋 VER CATÁLOGO DE PRODUTOS\n` +
                                 `2️⃣ 📸 VISITAR NOSSO INSTAGRAM\n` +
-                                `3️⃣ 📞 FALAR COM ATENDENTE AGORA\n` +
                                 `Digite o número da opção desejada:`
                         })
 
                     default:
                         return sock.sendMessage(from, {
-                            text: '❌ *Opção inválida*\n\nDigite 1, 2, 3, 4 ou MENU para voltar às opções.'
+                            text: '❌ *Opção inválida*\n\nDigite MENU para voltar às opções.'
                         })
                 }
             }
@@ -523,15 +497,13 @@ async function startBot() {
                         text: `🎯 *OPÇÕES DISPONÍVEIS:*\n\n` +
                             `1️⃣ 📋 VER CATÁLOGO DE PRODUTOS\n` +
                             `2️⃣ 📸 VISITAR NOSSO INSTAGRAM\n` +
-                            `3️⃣ 📞 FALAR COM ATENDENTE AGORA\n` +
                             `Digite o número da opção desejada:`
                     })
                 }
 
                 return sock.sendMessage(from, {
                     text: `⚠️ *ATENÇÃO - FORA DO HORÁRIO*\n\n` +
-                        `Você pode visualizar nossos produtos, mas para solicitar orçamento, entre em contato diretamente:\n\n` +
-                        `📱 ${ATENDENTES.whatsapp}\n\n` +
+                        `Você pode visualizar nossos produtos, mas para solicitar orçamento, precisará aguardar o horario do expediente.\n\n` +
                         `*Horário de atendimento:*\n` +
                         `${formatarHorarioAtendimento()}\n\n` +
                         `🔄 Digite *VOLTAR* para retornar ao menu`
@@ -557,14 +529,11 @@ async function startBot() {
                 saveJSONFile(ESTADOS_FILE, estados)
 
                 return sock.sendMessage(from, {
-                    text: `📋 *MENU PRINCIPAL - CRIEARTES*\n\n` +
-                              `Como podemos ajudar você hoje? 🤔\n\n` +
+                    text: `Como podemos ajudar você hoje? 🤔\n\n` +
                               `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                               `   ↳ Solicite um orçamento personalizado\n\n` +
                               `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                               `   ↳ Consulte o status do seu pedido\n\n` +
-                              `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                              `   ↳ Atendimento humano personalizado\n\n` +
                               `🔢 *Digite o número da opção desejada:*`
                 })
             }
@@ -613,20 +582,6 @@ async function startBot() {
                                 `🔄 Digite *VOLTAR* para menu anterior`
                         })
 
-                    case '3':
-                        estado.etapa = 'atendente_humano'
-                        saveJSONFile(ESTADOS_FILE, estados)
-                        return sock.sendMessage(from, {
-                            text: `👤 *ATENDIMENTO HUMANO - ${ATENDENTES.geral}*\n\n` +
-                                `Em instantes você será atendido(a) por *${ATENDENTES.geral}*.\n\n` +
-                                `📝 *Por favor, descreva sua necessidade:*\n` +
-                                `• Dúvidas sobre produtos\n` +
-                                `• Problemas com pedido\n` +
-                                `• Solicitações especiais\n` +
-                                `• Outras informações\n\n` +
-                                `🔄 Digite *VOLTAR* para cancelar`
-                        })
-
                     default:
                         return sock.sendMessage(from, {
                             text: '❌ *Opção inválida*\n\n Menu ou ATENDENTE para falar com um atendente.'
@@ -653,22 +608,10 @@ async function startBot() {
                                 `Como podemos ajudar você hoje? 🤔\n\n` +
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                                `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
                                 `🔢 Digite o número da opção:`
                         })
 
                     case 'acompanhar_pedido':
-                    case 'atendente_humano':
-                        estado.etapa = 'menu'
-                        saveJSONFile(ESTADOS_FILE, estados)
-                        return sock.sendMessage(from, {
-                            text: `📋 *MENU PRINCIPAL*\n\n` +
-                                `Como podemos ajudar você hoje? 🤔\n\n` +
-                                `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
-                                `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                                `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                                `🔢 Digite o número da opção:`
-                        })
 
                     case 'menu_fora_horario':
                     case 'catalogo_fora_horario':
@@ -678,7 +621,6 @@ async function startBot() {
                             text: `🎯 *OPÇÕES DISPONÍVEIS:*\n\n` +
                                 `1️⃣ 📋 VER CATÁLOGO DE PRODUTOS\n` +
                                 `2️⃣ 📸 VISITAR NOSSO INSTAGRAM\n` +
-                                `3️⃣ 📞 FALAR COM ATENDENTE AGORA\n` +
                                 `Digite o número da opção desejada:`
                         })
 
@@ -691,7 +633,6 @@ async function startBot() {
                                 `Como podemos ajudar você hoje? 🤔\n\n` +
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                                `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
                                 `🔢 Digite o número da opção:`
                         })
                 }
@@ -766,23 +707,6 @@ async function startBot() {
                             `Agradecemos sua paciência! 💙`
                     })
                 }
-            }
-
-            /* =========================
-               ATENDENTE HUMANO
-            ========================= */
-
-            if (estado.etapa === 'atendente_humano') {
-                // Encaminha para o atendente humano
-                console.log(`👤 Cliente ${from} precisa de atendimento: ${texto}`)
-
-                return sock.sendMessage(from, {
-                    text: `✅ *SOLICITAÇÃO ENCAMINHADA!*\n\n` +
-                        `Sua mensagem foi enviada para o atendente *${ATENDENTES.geral}*:\n\n` +
-                        `"${texto}"\n\n` +
-                        `📞 Ele entrará em contato em instantes para atendê-lo(a).\n\n` +
-                        `Agradecemos sua paciência! 💙`
-                })
             }
 
             /* =========================
@@ -909,7 +833,6 @@ async function startBot() {
                                 `Como podemos ajudar você hoje? 🤔\n\n` +
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                                `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
                                 `🔢 Digite o número da opção:`
                         })
 
@@ -921,13 +844,12 @@ async function startBot() {
                                 `Como podemos ajudar você hoje? 🤔\n\n` +
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                                `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
                                 `🔢 Digite o número da opção:`
                         })
 
                     default:
                         return sock.sendMessage(from, {
-                            text: '❌ Opção inválida. Digite 1, 2, 3, 4 ou 5.'
+                            text: '❌ Opção inválida. Digite Menu para ver as opções.'
                         })
                 }
             }
@@ -1021,8 +943,6 @@ async function startBot() {
                 text: `🤔 *Não entendi sua mensagem*\n\n` +
                     `Por favor, escolha uma das opções abaixo:\n\n` +
                     `📋 Digite *MENU* para ver o menu principal\n` +
-                    `👤 Digite *ATENDENTE* para falar com um atendente\n` +
-                    `🛒 Digite *CARRINHO* para ver seu carrinho\n` +
                     `🔄 Digite *VOLTAR* para voltar à etapa anterior\n\n` +
                     `Ou descreva sua necessidade e te ajudaremos!`
             })
@@ -1038,7 +958,6 @@ async function startBot() {
                         text: `❌ *Ops! Ocorreu um erro*\n\n` +
                             `Nosso sistema encontrou uma dificuldade. Por favor:\n\n` +
                             `1. Tente novamente em alguns instantes\n` +
-                            `2. Entre em contato direto: ${ATENDENTES.whatsapp}\n\n` +
                             `Desculpe pelo inconveniente! 🛠️`
                     })
                 }
