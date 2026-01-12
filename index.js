@@ -16,7 +16,7 @@ const ESTADOS_HUMANOS = ['aguardando_atendente']
 
 const HORARIO_ATENDIMENTO = {
     0: null,
-    1: { inicio: '00:00', fim: '18:00' },
+    1: { inicio: '09:00', fim: '18:00' },
     2: { inicio: '09:00', fim: '18:00' },
     3: { inicio: '09:00', fim: '18:00' },
     4: { inicio: '09:00', fim: '18:00' },
@@ -159,8 +159,6 @@ async function startBot() {
             return
         }
 
-        await marcarComoLida(sock, msg)
-
         /* =========================
            FORA DO HORÁRIO
         ========================= */
@@ -181,6 +179,8 @@ async function startBot() {
                       `Agradecemos sua compreensão! 💙`
             })
         }
+
+       await marcarComoLida(sock, msg)
 
         /* =========================
            INÍCIO
