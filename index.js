@@ -308,8 +308,8 @@ async function startBot() {
                       `   ↳ Solicite um orçamento personalizado\n\n` +
                       `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                       `   ↳ Consulte o status do seu pedido\n\n` +
-                      `3️⃣ 📋 *VER CATÁLOGO*\n\n` +
-                   `   ↳ Consulte produtos e valores\n\n` +
+                      `3️⃣ 📋 *VER CATÁLOGO*\n` +
+                      `   ↳ Consulte produtos e valores\n\n` +
                       `🔢 *Digite o número da opção desejada:*`
             })
         }
@@ -434,7 +434,7 @@ async function startBot() {
                       `   ↳ Solicite um orçamento personalizado\n\n` +
                       `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                       `   ↳ Consulte o status do seu pedido\n\n` +
-                      `3️⃣ 📋 *VER CATÁLOGO*\n\n` +
+                      `3️⃣ 📋 *VER CATÁLOGO*\n` +
                       `   ↳ Consulte produtos e valores\n\n` +
                       `🔢 *Digite o número da opção desejada:*`
             })
