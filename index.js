@@ -443,7 +443,6 @@ async function startBot() {
                         `1️⃣ 📋 VER CATÁLOGO DE PRODUTOS\n` +
                         `2️⃣ 📸 VISITAR NOSSO INSTAGRAM\n` +
                         `3️⃣ 📞 FALAR COM ATENDENTE AGORA\n` +
-                        `4️⃣ 🏠 INFORMAÇÕES DA EMPRESA\n\n` +
                         `Digite o número da opção desejada:`
                 })
                 return
@@ -487,25 +486,6 @@ async function startBot() {
                                 `🏠 Digite *MENU* para voltar às opções`
                         })
 
-                    case '4':
-                        return sock.sendMessage(from, {
-                            text: `🏪 *CRIEARTES PERSONALIZADOS*\n\n` +
-                                `*Sobre nós:*\n` +
-                                `Transformamos seus sonhos em arte! Especializados em personalização de produtos com qualidade e criatividade.\n\n` +
-                                `*Serviços:*\n` +
-                                `• Personalização de camisetas\n` +
-                                `• Canecas personalizadas\n` +
-                                `• Presentes criativos\n` +
-                                `• Brindes corporativos\n` +
-                                `• Decoração personalizada\n\n` +
-                                `*Valores:*\n` +
-                                `💙 Qualidade\n` +
-                                `🎨 Criatividade\n` +
-                                `⚡ Agilidade\n` +
-                                `🤝 Atendimento personalizado\n\n` +
-                                `🏠 Digite *MENU* para voltar às opções`
-                        })
-
                     case 'MENU':
                     case 'menu':
                         estado.etapa = 'menu_fora_horario'
@@ -515,7 +495,6 @@ async function startBot() {
                                 `1️⃣ 📋 VER CATÁLOGO DE PRODUTOS\n` +
                                 `2️⃣ 📸 VISITAR NOSSO INSTAGRAM\n` +
                                 `3️⃣ 📞 FALAR COM ATENDENTE AGORA\n` +
-                                `4️⃣ 🏠 INFORMAÇÕES DA EMPRESA\n\n` +
                                 `Digite o número da opção desejada:`
                         })
 
@@ -539,7 +518,6 @@ async function startBot() {
                             `1️⃣ 📋 VER CATÁLOGO DE PRODUTOS\n` +
                             `2️⃣ 📸 VISITAR NOSSO INSTAGRAM\n` +
                             `3️⃣ 📞 FALAR COM ATENDENTE AGORA\n` +
-                            `4️⃣ 🏠 INFORMAÇÕES DA EMPRESA\n\n` +
                             `Digite o número da opção desejada:`
                     })
                 }
@@ -650,60 +628,6 @@ async function startBot() {
                                 `🔄 Digite *VOLTAR* para cancelar`
                         })
 
-                    case '4':
-                        return sock.sendMessage(from, {
-                            text: `🏪 *CRIEARTES PERSONALIZADOS*\n\n` +
-                                `*Missão:* Transformar ideias em produtos personalizados com excelência e criatividade.\n\n` +
-                                `*Valores:*\n` +
-                                `✅ Qualidade premium\n` +
-                                `✅ Atendimento personalizado\n` +
-                                `✅ Prazos cumpridos\n` +
-                                `✅ Satisfação garantida\n\n` +
-                                `*Equipe:*\n` +
-                                `👨‍🎨 ${ATENDENTES.orcamento} - Criação e orçamentos\n` +
-                                `👩‍💼 ${ATENDENTES.acompanhamento} - Atendimento e pedidos\n\n` +
-                                `*Contato:*\n` +
-                                `📱 WhatsApp: ${ATENDENTES.whatsapp}\n` +
-                                `📧 E-mail: contato@crieartes.com\n\n` +
-                                `🕘 *Horário:*\n${formatarHorarioAtendimento()}\n\n` +
-                                `🏠 Digite *MENU* para voltar`
-                        })
-
-                    case '5':
-                        if (estado.carrinho.length === 0) {
-                            return sock.sendMessage(from, {
-                                text: `🛒 *SEU CARRINHO ESTÁ VAZIO*\n\n` +
-                                    `Para adicionar produtos:\n` +
-                                    `1. Digite 1 para fazer orçamento\n` +
-                                    `2. Escolha os produtos desejados\n` +
-                                    `3. Defina as quantidades\n\n` +
-                                    `🔄 Digite *VOLTAR* para continuar`
-                            })
-                        }
-
-                        estado.etapa = 'carrinho'
-                        saveJSONFile(ESTADOS_FILE, estados)
-                        return sock.sendMessage(from, {
-                            text: `${resumoCarrinho(estado.carrinho)}\n\n` +
-                                `📋 *OPÇÕES DO CARRINHO:*\n\n` +
-                                `1️⃣ ➕ ADICIONAR MAIS PRODUTOS\n` +
-                                `2️⃣ ✏️ EDITAR/REMOVER ITENS\n` +
-                                `3️⃣ 💰 FINALIZAR ORÇAMENTO\n` +
-                                `4️⃣ 🗑️ ESVAZIAR CARRINHO\n` +
-                                `5️⃣ 🏠 VOLTAR AO MENU\n\n` +
-                                `🔢 Digite o número da opção:`
-                        })
-
-                    case 'ATENDENTE':
-                    case 'atendente':
-                        estado.etapa = 'atendente_humano'
-                        saveJSONFile(ESTADOS_FILE, estados)
-                        return sock.sendMessage(from, {
-                            text: `👤 *ATENDIMENTO HUMANO*\n\n` +
-                                `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
-                                `Por favor, descreva sua necessidade:`
-                        })
-
                     default:
                         return sock.sendMessage(from, {
                             text: '❌ *Opção inválida*\n\n Menu ou ATENDENTE para falar com um atendente.'
@@ -731,8 +655,6 @@ async function startBot() {
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                                 `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                                `4️⃣ ℹ️ *INFORMAÇÕES DA LOJA*\n` +
-                                `5️⃣ 🛒 *MEU CARRINHO*\n\n` +
                                 `🔢 Digite o número da opção:`
                         })
 
@@ -746,8 +668,6 @@ async function startBot() {
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                                 `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                                `4️⃣ ℹ️ *INFORMAÇÕES DA LOJA*\n` +
-                                `5️⃣ 🛒 *MEU CARRINHO*\n\n` +
                                 `🔢 Digite o número da opção:`
                         })
 
@@ -760,7 +680,6 @@ async function startBot() {
                                 `1️⃣ 📋 VER CATÁLOGO DE PRODUTOS\n` +
                                 `2️⃣ 📸 VISITAR NOSSO INSTAGRAM\n` +
                                 `3️⃣ 📞 FALAR COM ATENDENTE AGORA\n` +
-                                `4️⃣ 🏠 INFORMAÇÕES DA EMPRESA\n\n` +
                                 `Digite o número da opção desejada:`
                         })
 
@@ -774,8 +693,6 @@ async function startBot() {
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                                 `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                                `4️⃣ ℹ️ *INFORMAÇÕES DA LOJA*\n` +
-                                `5️⃣ 🛒 *MEU CARRINHO*\n\n` +
                                 `🔢 Digite o número da opção:`
                         })
                 }
@@ -994,8 +911,6 @@ async function startBot() {
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                                 `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                                `4️⃣ ℹ️ *INFORMAÇÕES DA LOJA*\n` +
-                                `5️⃣ 🛒 *MEU CARRINHO*\n\n` +
                                 `🔢 Digite o número da opção:`
                         })
 
@@ -1008,8 +923,6 @@ async function startBot() {
                                 `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
                                 `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                                 `3️⃣ 👤 *FALAR COM ATENDENTE*\n` +
-                                `4️⃣ ℹ️ *INFORMAÇÕES DA LOJA*\n` +
-                                `5️⃣ 🛒 *MEU CARRINHO*\n\n` +
                                 `🔢 Digite o número da opção:`
                         })
 
