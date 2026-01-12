@@ -82,7 +82,7 @@ function getSaudacao() {
 }
 
 function getWhitelist() {
-    return getJSONFile(WHITELIST_FILE, [])
+    return getJSONFile(WHITELIST_FILE, {})
 }
 
 function saveWhitelist(lista) {
@@ -90,7 +90,7 @@ function saveWhitelist(lista) {
 }
 
 function isWhitelisted(numero) {
-    const lista = getJSONFile('./whitelist.json')
+    const lista = getWhitelist()
     return !!lista[numero]
 }
 
@@ -133,8 +133,8 @@ async function startBot() {
             WHITELIST (IGNORA BOT)
          ========================= */
          
-         if (isWhitelisted(from)) {
-             console.log(`⭐ Número na whitelist: ${from}`)
+         if (isWhitelisted(from) && !ADMINS.includes(from)) {
+             console.log(`⭐ Número na whitelist (ignorado pelo bot): ${from}`)
              return
          }
 
@@ -193,57 +193,46 @@ async function startBot() {
                  return sock.sendMessage(from, { text: '❌ Você não tem permissão.' })
              }
          
-             const partes = texto.split(' ')
-             const numero = partes[1]?.replace(/\D/g, '')
-         
+             const numero = texto.split(' ')[1]?.replace(/\D/g, '')
              if (!numero) {
-                 return sock.sendMessage(from, {
-                     text: '❌ Use: /addwhitelist 5599999999999'
-                 })
+                 return sock.sendMessage(from, { text: '❌ Use: /addwhitelist 5599999999999' })
              }
          
              const jid = `${numero}@s.whatsapp.net`
              const lista = getWhitelist()
          
-             if (lista.includes(jid)) {
-                 return sock.sendMessage(from, {
-                     text: '⚠️ Número já está na whitelist.'
-                 })
+             if (lista[jid]) {
+                 return sock.sendMessage(from, { text: '⚠️ Número já está na whitelist.' })
              }
          
-             lista.push(jid)
+             lista[jid] = true
              saveWhitelist(lista)
          
              return sock.sendMessage(from, {
                  text: `✅ Número ${numero} adicionado à whitelist.`
              })
          }
+
          
          if (texto.startsWith('/REMOVEWHITELIST')) {
              if (!ADMINS.includes(from)) {
                  return sock.sendMessage(from, { text: '❌ Você não tem permissão.' })
              }
          
-             const partes = texto.split(' ')
-             const numero = partes[1]?.replace(/\D/g, '')
-         
+             const numero = texto.split(' ')[1]?.replace(/\D/g, '')
              if (!numero) {
-                 return sock.sendMessage(from, {
-                     text: '❌ Use: /removewhitelist 5599999999999'
-                 })
+                 return sock.sendMessage(from, { text: '❌ Use: /removewhitelist 5599999999999' })
              }
          
              const jid = `${numero}@s.whatsapp.net`
              const lista = getWhitelist()
          
-             if (!lista.includes(jid)) {
-                 return sock.sendMessage(from, {
-                     text: '⚠️ Número não está na whitelist.'
-                 })
+             if (!lista[jid]) {
+                 return sock.sendMessage(from, { text: '⚠️ Número não está na whitelist.' })
              }
          
-             const novaLista = lista.filter(n => n !== jid)
-             saveWhitelist(novaLista)
+             delete lista[jid]
+             saveWhitelist(lista)
          
              return sock.sendMessage(from, {
                  text: `🗑️ Número ${numero} removido da whitelist.`
