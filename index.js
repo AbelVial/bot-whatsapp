@@ -178,23 +178,30 @@ if (estado.etapa === 'menu') {
             estado.etapa = 'aguardando_atendente'
             saveJSONFile(ESTADOS_FILE, estados)
 
-            return sock.sendMessage(from, {
-                text:
-                    `📝 *FAZER ORÇAMENTO*\n\n` +
-                    `Você será atendido por *${ATENDENTES.orcamento}* em instantes.\n\n` +
-                    `Por favor, descreva sua necessidade:`
-            })
+          return sock.sendMessage(from, {
+                            text: `📝 *FAZER ORÇAMENTO*\n\n` +
+                                `Em breve você será atendido pelo atendente *${ATENDENTES.orcamento}*.\n\n` +
+                                `Para adiantar, informe:\n` +
+                                `• Nome completo\n` +
+                                `• Produto desejado e quantidade\n` +
+                                `• E/ou qualquer dúvida que tenha\n\n` +
+                                `Agradecemos sua preferência! 💙\n\n` +
+                                `🏠 Digite *MENU* para voltar às opções principais.`
+                        })
 
         case '2': // ACOMPANHAR PEDIDO → HUMANO
             estado.etapa = 'aguardando_atendente'
             saveJSONFile(ESTADOS_FILE, estados)
 
-            return sock.sendMessage(from, {
-                text:
-                    `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
-                    `Você será atendido por *${ATENDENTES.geral}* em instantes.\n\n` +
-                    `Por favor, descreva sua necessidade:`
-            })
+          return sock.sendMessage(from, {
+                            text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
+                                `Em breve você será atendido pelo atendente *${ATENDENTES.geral}*.\n\n` +
+                                `Para adiantar, informe:\n` +
+                                `• Nome completo\n` +
+                                `• E/ou qualquer dúvida que tenha\n\n` +
+                                `Agradecemos sua preferência! 💙\n\n` +
+                                `🏠 Digite *MENU* para voltar às opções principais.`
+                        })
 
         default:
             return sock.sendMessage(from, {
