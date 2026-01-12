@@ -15,8 +15,8 @@ const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
 const ESTADOS_HUMANOS = ['aguardando_atendente']
 
 const HORARIO_ATENDIMENTO = {
-    0: { inicio: '09:00', fim: '23:59' },
-    1: { inicio: '00:00', fim: '18:00' },
+    0: null,
+    1: { inicio: '08:00', fim: '18:00' },
     2: { inicio: '09:00', fim: '18:00' },
     3: { inicio: '09:00', fim: '18:00' },
     4: { inicio: '09:00', fim: '18:00' },
