@@ -428,9 +428,7 @@ async function startBot() {
                         `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
                         `📅 *Horários de atendimento:*\n` +
                         `${formatarHorarioAtendimento()}\n\n` +
-                        `💬 *Sua mensagem foi registrada:*\n"${texto}"\n\n` +
-                        `✅ Nossa equipe responderá assim que possível.\n\n` +
-                        `📞 *Contato direto:*\n${ATENDENTES.whatsapp}\n\n` +
+                        `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                         `Agradecemos sua compreensão! 💙`
                 })
 
