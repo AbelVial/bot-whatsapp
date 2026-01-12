@@ -128,7 +128,15 @@ async function startBot() {
         if (!msg.message || msg.key.fromMe) return
 
         const from = msg.key.remoteJid
-        if (from !== NUMERO_TESTE) return
+
+       /* =========================
+            WHITELIST (IGNORA BOT)
+         ========================= */
+         
+         if (isWhitelisted(from)) {
+             console.log(`⭐ Número na whitelist: ${from}`)
+             return
+         }
 
         const texto = (
             msg.message.conversation ||
@@ -273,15 +281,6 @@ async function startBot() {
                     `Agradecemos sua compreensão! 💙`
           })
       }
-
-       /* =========================
-            WHITELIST (IGNORA BOT)
-         ========================= */
-         
-         if (isWhitelisted(from)) {
-             console.log(`⭐ Número na whitelist: ${from}`)
-             return
-         }
 
         /* =========================
            INÍCIO
