@@ -519,25 +519,12 @@ async function startBot() {
         if (!msg.message || msg.key.fromMe) return
 
         const from = msg.key.remoteJid
-
-        if (isWhitelisted(from) && !ADMINS.includes(from)) {
-            console.log(`⭐ Número na whitelist (ignorado): ${from.split('@')[0]}`)
-            return
-        }
-
+        
         const texto = (
             msg.message.conversation ||
             msg.message.extendedTextMessage?.text ||
             ''
         ).trim().toUpperCase()
-
-        const estado = getEstadoCliente(from)
-        estado.ultimaInteracao = new Date().toISOString()
-        estado.resgatado = false
-
-        if (podeMarcarComoLida(estado)) {
-            await marcarComoLida(sock, msg)
-        }
 
         if (texto === '/ANTIBANSTATS') {
             if (!ADMINS.includes(from)) {
@@ -605,34 +592,6 @@ async function startBot() {
             }, 'texto')
         }
 
-        if (texto === 'MENU') {
-            estado.etapa = 'menu'
-            saveEstadoCliente(from, estado)
-
-            estatisticas.registrarEnvio()
-            return gestorEnvio.enviarMensagem(from, {
-                text: `Como podemos ajudar você hoje? 🤔\n\n` +
-                      `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
-                      `   ↳ Solicite um orçamento personalizado\n\n` +
-                      `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                      `   ↳ Consulte o status do seu pedido\n\n` +
-                      `3️⃣ 📋 *VER CATÁLOGO*\n` +
-                      `   ↳ Consulte produtos e valores\n\n` +
-                      `🔢 *Digite o número da opção desejada:*`
-            }, 'menu')
-        }
-
-        if (texto === 'ENCERRAR' || texto === 'FINALIZAR') {
-            estado.etapa = 'inicio'
-            saveEstadoCliente(from, estado)
-
-            estatisticas.registrarEnvio()
-            return gestorEnvio.enviarMensagem(from, {
-                text: `✅ *Atendimento encerrado com sucesso!*\n\n` +
-                      `Se precisar de algo mais, é só enviar uma mensagem 😊`
-            }, 'texto')
-        }
-
         if (texto.startsWith('/ADDWHITELIST')) {
             if (!ADMINS.includes(from)) {
                 return gestorEnvio.enviarMensagem(from, { text: '❌ Você não tem permissão.' }, 'texto')
@@ -685,6 +644,47 @@ async function startBot() {
             }, 'texto')
         }
 
+        if (isWhitelisted(from) && !ADMINS.includes(from)) {
+            console.log(`⭐ Número na whitelist (ignorado): ${from.split('@')[0]}`)
+            return
+        }
+
+        const estado = getEstadoCliente(from)
+        estado.ultimaInteracao = new Date().toISOString()
+        estado.resgatado = false
+
+        if (podeMarcarComoLida(estado)) {
+            await marcarComoLida(sock, msg)
+        }
+
+        if (texto === 'MENU') {
+            estado.etapa = 'menu'
+            saveEstadoCliente(from, estado)
+
+            estatisticas.registrarEnvio()
+            return gestorEnvio.enviarMensagem(from, {
+                text: `Como podemos ajudar você hoje? 🤔\n\n` +
+                      `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
+                      `   ↳ Solicite um orçamento personalizado\n\n` +
+                      `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
+                      `   ↳ Consulte o status do seu pedido\n\n` +
+                      `3️⃣ 📋 *VER CATÁLOGO*\n` +
+                      `   ↳ Consulte produtos e valores\n\n` +
+                      `🔢 *Digite o número da opção desejada:*`
+            }, 'menu')
+        }
+
+        if (texto === 'ENCERRAR' || texto === 'FINALIZAR') {
+            estado.etapa = 'inicio'
+            saveEstadoCliente(from, estado)
+
+            estatisticas.registrarEnvio()
+            return gestorEnvio.enviarMensagem(from, {
+                text: `✅ *Atendimento encerrado com sucesso!*\n\n` +
+                      `Se precisar de algo mais, é só enviar uma mensagem 😊`
+            }, 'texto')
+        }
+
         if (ESTADOS_HUMANOS.includes(estado.etapa)) {
             console.log(`👤 Atendimento humano ativo: ${from}`)
             return
@@ -707,7 +707,7 @@ async function startBot() {
                     `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                     `Agradecemos sua compreensão! 💙`
           }, 'texto')
-      }
+        }
 
         if (estado.etapa === 'inicio') {
             const saudacao = getSaudacao()
