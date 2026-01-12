@@ -1,4 +1,4 @@
-const NUMERO_TESTE = '5527997600138@s.whatsapp.net'
+const NUMERO_TESTE = '5527997600139@s.whatsapp.net'
 
 import makeWASocket, {
     useMultiFileAuthState,
