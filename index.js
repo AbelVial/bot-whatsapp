@@ -550,14 +550,7 @@ async function startBot() {
                         `Somos especialistas em transformar suas ideias em produtos únicos e personalizados com muita qualidade e criatividade! 💙\n\n` +
                         `📍 *Nossos canais oficiais:*\n` +
                         `📸 Instagram: @cacrieartes\n` +
-                        `📦 Catálogo completo: https://wa.me/c/5527999975339\n\n` +
-                        `🕘 *Horário de atendimento:*\n` +
-                        `${formatarHorarioAtendimento(true)}\n\n` +
-                        `*Como funciona:*\n` +
-                        `1. Escolha seus produtos\n` +
-                        `2. Faça seu orçamento\n` +
-                        `3. Aprove sua arte\n` +
-                        `4. Receba com qualidade!`
+                        `📦 Catálogo completo: https://wa.me/c/5527999975339\n\n` 
                 })
 
                 estado.etapa = 'menu'
