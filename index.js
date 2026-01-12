@@ -38,7 +38,7 @@ async function marcarComoLida(sock, msg) {
 
 const HORARIO_ATENDIMENTO = {
     0: { inicio: '09:00', fim: '23:59' }, // Domingo (fechado)
-    1: { inicio: '09:00', fim: '18:00' }, // Segunda
+    1: { inicio: '00:00', fim: '18:00' }, // Segunda
     2: { inicio: '09:00', fim: '18:00' }, // Terça
     3: { inicio: '09:00', fim: '18:00' }, // Quarta
     4: { inicio: '09:00', fim: '18:00' }, // Quinta
