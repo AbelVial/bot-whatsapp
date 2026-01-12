@@ -431,19 +431,6 @@ async function startBot() {
                         `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
                         `Agradecemos sua compreensão! 💙`
                 })
-
-                // Oferecer opções automáticas
-                estado.etapa = 'menu_fora_horario'
-                saveJSONFile(ESTADOS_FILE, estados)
-
-                await sock.sendMessage(from, {
-                    text: `🎯 *OPÇÕES DISPONÍVEIS:*\n\n` +
-                        `1️⃣ 📋 VER CATÁLOGO DE PRODUTOS\n` +
-                        `2️⃣ 📸 VISITAR NOSSO INSTAGRAM\n` +
-                        `3️⃣ 📞 FALAR COM ATENDENTE AGORA\n` +
-                        `Digite o número da opção desejada:`
-                })
-                return
             }
 
             /* =========================
