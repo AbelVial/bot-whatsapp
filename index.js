@@ -12,9 +12,8 @@ const ESTADOS_DIR = './estados'
 const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
 const WHITELIST_FILE = './whitelist.json'
 
-// Números que podem gerenciar a whitelist
 const ADMINS = [
-    '5527999975339@s.whatsapp.net' // seu número
+    '5527999975339@s.whatsapp.net' 
 ]
 
 const ESTADOS_HUMANOS = ['aguardando_atendente']
@@ -31,8 +30,8 @@ const HORARIO_ATENDIMENTO = {
 }
 
 const ATENDENTES = {
-    geral: process.env.ATENDENTE_GERAL || 'Cristiane',
-    orcamento: process.env.ATENDENTE_ORCAMENTO || 'Cristiane'
+    geral: process.env.ATENDENTE_GERAL,
+    orcamento: process.env.ATENDENTE_ORCAMENTO
 }
 
 const RESGATE_CONFIG = {
