@@ -225,7 +225,7 @@ const WHITELIST_FILE = './whitelist.json'
 const STATS_FILE = './stats_anti_ban.json'
 
 const ADMINS = [
-    '5527999975339@s.whatsapp.net' 
+    '27999975339@s.whatsapp.net' 
 ]
 
 const ESTADOS_HUMANOS = ['aguardando_atendente']
