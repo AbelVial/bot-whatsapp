@@ -308,6 +308,8 @@ async function startBot() {
                       `   ↳ Solicite um orçamento personalizado\n\n` +
                       `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                       `   ↳ Consulte o status do seu pedido\n\n` +
+                      `3️⃣ 📋 *VER CATÁLOGO*\n\n` +
+                   `   ↳ Consulte produtos e valores\n\n` +
                       `🔢 *Digite o número da opção desejada:*`
             })
         }
@@ -432,6 +434,8 @@ async function startBot() {
                       `   ↳ Solicite um orçamento personalizado\n\n` +
                       `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
                       `   ↳ Consulte o status do seu pedido\n\n` +
+                      `3️⃣ 📋 *VER CATÁLOGO*\n\n` +
+                      `   ↳ Consulte produtos e valores\n\n` +
                       `🔢 *Digite o número da opção desejada:*`
             })
         }
@@ -469,6 +473,16 @@ async function startBot() {
                               `• E/ou qualquer dúvida que tenha\n\n` +
                               `🏠 Digite *MENU* para voltar às opções principais.`
                     })
+
+                  case '3':
+                   return sock.sendMessage(from, {
+                       text: `📋 *NOSSO CATÁLOGO*\n\n` +
+                             `🌐 Acesse nosso catálogo completo:\n` +
+                             `https://wa.me/c/5527999975339\n\n` +
+                             `Ou nos siga no Instagram:\n` +
+                             `📸 @cacrieartes\n\n` +
+                             `🏠 Digite *MENU* para voltar.`
+                   })
 
                 default:
                     return sock.sendMessage(from, {
