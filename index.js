@@ -13,6 +13,7 @@ const ESTADOS_FILE = './estados.json'
 const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
 
 const ESTADOS_HUMANOS = ['aguardando_atendente']
+const ESTADOS_NAO_LER = ['aguardando_atendente', 'fora_horario']
 
 const HORARIO_ATENDIMENTO = {
     0: null,
@@ -66,7 +67,7 @@ async function marcarComoLida(sock, msg) {
 }
 
 function podeMarcarComoLida(estado) {
-    return !ESTADOS_HUMANOS.includes(estado.etapa)
+    return !ESTADOS_NAO_LER.includes(estado.etapa)
 }
 
 function getSaudacao() {
@@ -172,8 +173,7 @@ async function startBot() {
         ========================= */
 
         if (!dentroHorario() && estado.etapa === 'inicio') {
-          await marcarComoLida(sock, msg) 
-      
+          
           const msgs = getJSONFile(MENSAGENS_FORA_HORARIO, [])
           msgs.push({ cliente: from, texto, data: new Date().toISOString() })
           saveJSONFile(MENSAGENS_FORA_HORARIO, msgs)
