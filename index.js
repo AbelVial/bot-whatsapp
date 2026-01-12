@@ -7,10 +7,14 @@ import qrcode from 'qrcode-terminal'
    CONFIGURAÇÕES
 ========================= */
 
-const NUMERO_TESTE = '5527997600138@s.whatsapp.net'
-
 const ESTADOS_FILE = './estados.json'
 const MENSAGENS_FORA_HORARIO = './mensagens_fora_horario.json'
+const WHITELIST_FILE = './whitelist.json'
+
+// Números que podem gerenciar a whitelist
+const ADMINS = [
+    '5527999975339@s.whatsapp.net' // seu número
+]
 
 const ESTADOS_HUMANOS = ['aguardando_atendente']
 const ESTADOS_NAO_LER = ['aguardando_atendente', 'fora_horario']
@@ -75,6 +79,19 @@ function getSaudacao() {
     if (h < 12) return '☀️ Bom dia!'
     if (h < 18) return '🌤️ Boa tarde!'
     return '🌙 Boa noite!'
+}
+
+function getWhitelist() {
+    return getJSONFile(WHITELIST_FILE, [])
+}
+
+function saveWhitelist(lista) {
+    saveJSONFile(WHITELIST_FILE, lista)
+}
+
+function isWhitelisted(numero) {
+    const lista = getWhitelist()
+    return lista.includes(numero)
 }
 
 /* =========================
@@ -159,6 +176,73 @@ async function startBot() {
             })
         }
 
+       /* =========================
+            COMANDOS ADMIN
+         ========================= */
+         
+         if (texto.startsWith('/ADDWHITELIST')) {
+             if (!ADMINS.includes(from)) {
+                 return sock.sendMessage(from, { text: '❌ Você não tem permissão.' })
+             }
+         
+             const partes = texto.split(' ')
+             const numero = partes[1]?.replace(/\D/g, '')
+         
+             if (!numero) {
+                 return sock.sendMessage(from, {
+                     text: '❌ Use: /addwhitelist 5599999999999'
+                 })
+             }
+         
+             const jid = `${numero}@s.whatsapp.net`
+             const lista = getWhitelist()
+         
+             if (lista.includes(jid)) {
+                 return sock.sendMessage(from, {
+                     text: '⚠️ Número já está na whitelist.'
+                 })
+             }
+         
+             lista.push(jid)
+             saveWhitelist(lista)
+         
+             return sock.sendMessage(from, {
+                 text: `✅ Número ${numero} adicionado à whitelist.`
+             })
+         }
+         
+         if (texto.startsWith('/REMOVEWHITELIST')) {
+             if (!ADMINS.includes(from)) {
+                 return sock.sendMessage(from, { text: '❌ Você não tem permissão.' })
+             }
+         
+             const partes = texto.split(' ')
+             const numero = partes[1]?.replace(/\D/g, '')
+         
+             if (!numero) {
+                 return sock.sendMessage(from, {
+                     text: '❌ Use: /removewhitelist 5599999999999'
+                 })
+             }
+         
+             const jid = `${numero}@s.whatsapp.net`
+             const lista = getWhitelist()
+         
+             if (!lista.includes(jid)) {
+                 return sock.sendMessage(from, {
+                     text: '⚠️ Número não está na whitelist.'
+                 })
+             }
+         
+             const novaLista = lista.filter(n => n !== jid)
+             saveWhitelist(novaLista)
+         
+             return sock.sendMessage(from, {
+                 text: `🗑️ Número ${numero} removido da whitelist.`
+             })
+         }
+
+
         /* =========================
            BLOQUEIO HUMANO
         ========================= */
@@ -189,6 +273,15 @@ async function startBot() {
                     `Agradecemos sua compreensão! 💙`
           })
       }
+
+       /* =========================
+            WHITELIST (IGNORA BOT)
+         ========================= */
+         
+         if (isWhitelisted(from)) {
+             console.log(`⭐ Número na whitelist: ${from}`)
+             return
+         }
 
         /* =========================
            INÍCIO
