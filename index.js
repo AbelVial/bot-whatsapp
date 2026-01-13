@@ -135,20 +135,18 @@ class GestorEnvio {
         this.rateLimiter = new RateLimiter()
         this.filaEnvio = []
         this.processando = false
-        this.ultimasMensagensBot = new Map() // Mapa para rastrear últimas mensagens enviadas pelo bot
         
         setInterval(() => {
             this.rateLimiter.limparAntigos()
         }, 3600000)
     }
 
-    async enviarMensagem(numero, conteudo, tipo = 'texto', isManualSend = false) {
+    async enviarMensagem(numero, conteudo, tipo = 'texto') {
         return new Promise((resolve, reject) => {
             this.filaEnvio.push({
                 numero,
                 conteudo,
                 tipo,
-                isManualSend, // Flag para identificar se foi envio manual pelo bot
                 resolve,
                 reject,
                 timestamp: Date.now()
@@ -196,12 +194,6 @@ class GestorEnvio {
             
             this.rateLimiter.registrarEnvio(item.numero)
             
-            // Se foi envio manual, registrar para evitar menu automático
-            if (item.isManualSend) {
-                this.ultimasMensagensBot.set(item.numero, Date.now())
-                console.log(`🤖 Mensagem manual registrada para ${item.numero.split('@')[0]}`)
-            }
-            
             if (ANTI_BAN_CONFIG.LOG_DELAYS) {
                 console.log(`✅ Mensagem enviada para ${item.numero.split('@')[0]}`)
             }
@@ -220,25 +212,6 @@ class GestorEnvio {
         }
         
         setTimeout(() => this.processarFila(), 100)
-    }
-
-    // Verificar se o bot enviou mensagem manual recentemente para este número
-    botEnviouRecentemente(numero) {
-        const ultimoEnvio = this.ultimasMensagensBot.get(numero)
-        if (!ultimoEnvio) return false
-        
-        const agora = Date.now()
-        const minutosDesdeEnvio = (agora - ultimoEnvio) / (1000 * 60)
-        
-        // Considerar como "recente" se foi enviado nos últimos 5 minutos
-        if (minutosDesdeEnvio <= 5) {
-            console.log(`🤖 Bot enviou mensagem manual há ${minutosDesdeEnvio.toFixed(1)}min para ${numero.split('@')[0]}`)
-            return true
-        }
-        
-        // Limpar entrada antiga
-        this.ultimasMensagensBot.delete(numero)
-        return false
     }
 
     delay(ms) {
@@ -553,24 +526,6 @@ async function startBot() {
             ''
         ).trim().toUpperCase()
 
-        // Verificar se o bot enviou mensagem manual recentemente para este número
-        // Se sim, não iniciar o menu automático (tratar como conversa manual)
-        if (gestorEnvio.botEnviouRecentemente(from)) {
-            console.log(`🤖 Conversa manual em andamento com ${from.split('@')[0]}. Menu automático suprimido.`)
-            
-            // Apenas atualizar a última interação, mas não processar como comando do bot
-            const estado = getEstadoCliente(from)
-            estado.ultimaInteracao = new Date().toISOString()
-            saveEstadoCliente(from, estado)
-            
-            // Marcar como lida se possível
-            if (podeMarcarComoLida(estado)) {
-                await marcarComoLida(sock, msg)
-            }
-            
-            return
-        }
-
         if (texto === '/ANTIBANSTATS') {
             if (!ADMINS.includes(from)) {
                 return gestorEnvio.enviarMensagem(from, { 
@@ -687,46 +642,6 @@ async function startBot() {
             return gestorEnvio.enviarMensagem(from, {
                 text: `🗑️ Número ${numero} removido da whitelist.`
             }, 'texto')
-        }
-
-        // Novo comando para enviar mensagem manual
-        if (texto.startsWith('/SEND')) {
-            if (!ADMINS.includes(from)) {
-                return gestorEnvio.enviarMensagem(from, { text: '❌ Você não tem permissão.' }, 'texto')
-            }
-            
-            const partes = texto.split(' ')
-            if (partes.length < 3) {
-                return gestorEnvio.enviarMensagem(from, { 
-                    text: '❌ Use: /send NUMERO MENSAGEM\nEx: /send 5511999999999 Olá, como vai?' 
-                }, 'texto')
-            }
-            
-            const numero = partes[1].replace(/\D/g, '')
-            const mensagem = partes.slice(2).join(' ')
-            
-            if (!numero || numero.length < 10) {
-                return gestorEnvio.enviarMensagem(from, { 
-                    text: '❌ Número inválido. Use formato: 5511999999999' 
-                }, 'texto')
-            }
-            
-            const jid = `${numero}@s.whatsapp.net`
-            
-            try {
-                // Usar flag isManualSend = true para registrar como envio manual
-                await gestorEnvio.enviarMensagem(jid, { text: mensagem }, 'texto', true)
-                estatisticas.registrarEnvio()
-                
-                return gestorEnvio.enviarMensagem(from, { 
-                    text: `✅ Mensagem manual enviada para ${numero}` 
-                }, 'texto')
-            } catch (error) {
-                console.error('❌ Erro ao enviar mensagem manual:', error)
-                return gestorEnvio.enviarMensagem(from, { 
-                    text: `❌ Erro ao enviar mensagem: ${error.message}` 
-                }, 'texto')
-            }
         }
 
         if (isWhitelisted(from) && !ADMINS.includes(from)) {
