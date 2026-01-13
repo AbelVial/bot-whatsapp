@@ -430,24 +430,6 @@ function getSaudacao() {
     return '🌙 Boa noite!'
 }
 
-// FUNÇÃO ADICIONADA: Verificar se é resposta ao bot
-function isReplyToBot(msg) {
-    try {
-        // Verificar se a mensagem é uma resposta (tem contextInfo)
-        if (msg.message?.extendedTextMessage?.contextInfo) {
-            const context = msg.message.extendedTextMessage.contextInfo
-            // Verificar se é resposta a uma mensagem (tem ID da mensagem)
-            if (context.stanzaId) {
-                return true
-            }
-        }
-        return false
-    } catch (error) {
-        console.error('❌ Erro ao verificar reply:', error)
-        return false
-    }
-}
-
 function getWhitelist() {
     return getJSONFile(WHITELIST_FILE, {})
 }
@@ -544,18 +526,6 @@ async function startBot() {
             ''
         ).trim().toUpperCase()
 
-        // Verificar se é uma resposta a uma mensagem do bot
-        const isReply = isReplyToBot(msg)
-        
-        const estado = getEstadoCliente(from)
-        estado.ultimaInteracao = new Date().toISOString()
-        estado.resgatado = false
-
-        if (podeMarcarComoLida(estado)) {
-            await marcarComoLida(sock, msg)
-        }
-
-        // ========== COMANDOS ADMIN ==========
         if (texto === '/ANTIBANSTATS') {
             if (!ADMINS.includes(from)) {
                 return gestorEnvio.enviarMensagem(from, { 
@@ -674,107 +644,19 @@ async function startBot() {
             }, 'texto')
         }
 
-        // ========== VERIFICAR WHITELIST ==========
         if (isWhitelisted(from) && !ADMINS.includes(from)) {
             console.log(`⭐ Número na whitelist (ignorado): ${from.split('@')[0]}`)
             return
         }
 
-        // ========== SE É RESPOSTA AO BOT ==========
-        if (isReply) {
-            console.log(`↩️ Cliente ${from.split('@')[0]} está respondendo a uma mensagem do bot`)
-            
-            // Processar resposta normalmente
-            if (texto === 'MENU') {
-                estado.etapa = 'menu'
-                saveEstadoCliente(from, estado)
+        const estado = getEstadoCliente(from)
+        estado.ultimaInteracao = new Date().toISOString()
+        estado.resgatado = false
 
-                estatisticas.registrarEnvio()
-                return gestorEnvio.enviarMensagem(from, {
-                    text: `Como podemos ajudar você hoje? 🤔\n\n` +
-                          `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
-                          `   ↳ Solicite um orçamento personalizado\n\n` +
-                          `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                          `   ↳ Consulte o status do seu pedido\n\n` +
-                          `3️⃣ 📋 *VER CATÁLOGO*\n` +
-                          `   ↳ Consulte produtos e valores\n\n` +
-                          `🔢 *Digite o número da opção desejada:*`
-                }, 'menu')
-            }
-
-            if (texto === 'ENCERRAR' || texto === 'FINALIZAR') {
-                estado.etapa = 'inicio'
-                saveEstadoCliente(from, estado)
-
-                estatisticas.registrarEnvio()
-                return gestorEnvio.enviarMensagem(from, {
-                    text: `✅ *Atendimento encerrado com sucesso!*\n\n` +
-                          `Se precisar de algo mais, é só enviar uma mensagem 😊`
-                }, 'texto')
-            }
-
-            // Estados que requerem atendente humano
-            if (ESTADOS_HUMANOS.includes(estado.etapa)) {
-                console.log(`👤 Atendimento humano ativo: ${from}`)
-                return
-            }
-
-            // Processar opções do menu
-            if (estado.etapa === 'menu') {
-                switch (texto) {
-                    case '1':
-                        estado.etapa = 'aguardando_atendente'
-                        saveEstadoCliente(from, estado)
-
-                        estatisticas.registrarEnvio()
-                        return gestorEnvio.enviarMensagem(from, {
-                            text: `📝 *FAZER ORÇAMENTO*\n\n` +
-                                  `Em breve você será atendido pelo atendente *${ATENDENTES.orcamento}*.\n\n` +
-                                  `Para adiantar, informe:\n` +
-                                  `• Nome completo\n` +
-                                  `• Produto desejado e quantidade\n` +
-                                  `• E/ou qualquer dúvida que tenha\n\n` +
-                                  `🏠 Digite *MENU* para voltar às opções principais.`
-                        }, 'texto')
-
-                    case '2':
-                        estado.etapa = 'aguardando_atendente'
-                        saveEstadoCliente(from, estado)
-
-                        estatisticas.registrarEnvio()
-                        return gestorEnvio.enviarMensagem(from, {
-                            text: `📦 *ACOMPANHAMENTO DE PEDIDO*\n\n` +
-                                  `Em breve você será atendido pelo atendente *${ATENDENTES.geral}*.\n\n` +
-                                  `Para adiantar, informe:\n` +
-                                  `• Nome completo\n` +
-                                  `• E/ou qualquer dúvida que tenha\n\n` +
-                                  `🏠 Digite *MENU* para voltar às opções principais.`
-                        }, 'texto')
-
-                    case '3':
-                        estatisticas.registrarEnvio()
-                        return gestorEnvio.enviarMensagem(from, {
-                            text: `📋 *NOSSO CATÁLOGO*\n\n` +
-                                  `🌐 Acesse nosso catálogo completo:\n` +
-                                  `https://wa.me/c/5527999975339\n\n` +
-                                  `Ou nos siga no Instagram:\n` +
-                                  `📸 @cacrieartes\n\n` +
-                                  `🏠 Digite *MENU* para voltar.`
-                        }, 'texto')
-
-                    default:
-                        estatisticas.registrarEnvio()
-                        return gestorEnvio.enviarMensagem(from, {
-                            text: '❌ *Opção inválida*\n\nDigite *1* para orçamento ou *2* para acompanhamento.'
-                        }, 'erro')
-                }
-            }
-            
-            // Se chegou aqui e não processou nada, apenas ignore
-            return
+        if (podeMarcarComoLida(estado)) {
+            await marcarComoLida(sock, msg)
         }
 
-        // ========== SE NÃO É RESPOSTA (MENSAGEM INICIAL) ==========
         if (texto === 'MENU') {
             estado.etapa = 'menu'
             saveEstadoCliente(from, estado)
@@ -803,32 +685,30 @@ async function startBot() {
             }, 'texto')
         }
 
-        // Estados que requerem atendente humano
         if (ESTADOS_HUMANOS.includes(estado.etapa)) {
             console.log(`👤 Atendimento humano ativo: ${from}`)
             return
         }
 
-        // Verificar horário de atendimento
         if (!dentroHorario() && estado.etapa === 'inicio') {
-            const msgs = getJSONFile(MENSAGENS_FORA_HORARIO, [])
-            msgs.push({ cliente: from, texto, data: new Date().toISOString() })
-            saveJSONFile(MENSAGEMS_FORA_HORARIO, msgs)
-        
-            estado.etapa = 'fora_horario'
-            saveEstadoCliente(from, estado)
-        
-            estatisticas.registrarEnvio()
-            return gestorEnvio.enviarMensagem(from, {
-                text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
-                      `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
-                      `📅 *Horários de atendimento: Seg-Sex 09:00 as 17:00*\n` +
-                      `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
-                      `Agradecemos sua compreensão! 💙`
-            }, 'texto')
+          
+          const msgs = getJSONFile(MENSAGENS_FORA_HORARIO, [])
+          msgs.push({ cliente: from, texto, data: new Date().toISOString() })
+          saveJSONFile(MENSAGENS_FORA_HORARIO, msgs)
+      
+          estado.etapa = 'fora_horario'
+          saveEstadoCliente(from, estado)
+      
+          estatisticas.registrarEnvio()
+          return gestorEnvio.enviarMensagem(from, {
+              text: `⏰ *ATENDIMENTO FORA DO HORÁRIO*\n\n` +
+                    `Olá! No momento estamos fora do nosso horário de funcionamento.\n\n` +
+                    `📅 *Horários de atendimento: Seg-Sex 09:00 as 17:00*\n` +
+                    `✅ Deixe uma mensagem. Nossa equipe responderá assim que possível.\n\n` +
+                    `Agradecemos sua compreensão! 💙`
+          }, 'texto')
         }
 
-        // Fluxo inicial (primeira mensagem do cliente)
         if (estado.etapa === 'inicio') {
             const saudacao = getSaudacao()
 
@@ -856,9 +736,9 @@ async function startBot() {
             }, 'menu')
         }
 
-        // Processar opções do menu (para mensagens não-resposta)
         if (estado.etapa === 'menu') {
             switch (texto) {
+
                 case '1':
                     estado.etapa = 'aguardando_atendente'
                     saveEstadoCliente(from, estado)
