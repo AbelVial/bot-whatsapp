@@ -516,8 +516,8 @@ async function startBot() {
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0]
-        if (!msg.message) return
-    
+        if (!msg.message || msg.key.fromMe) return
+
         const from = msg.key.remoteJid
         
         const texto = (
@@ -653,17 +653,6 @@ async function startBot() {
         estado.ultimaInteracao = new Date().toISOString()
         estado.resgatado = false
 
-        // 👤 MENSAGEM ENVIADA PELO ATENDENTE (HUMANO)
-        if (msg.key.fromMe) {
-            const estado = getEstadoCliente(from)
-            estado.etapa = 'aguardando_atendente'
-            estado.ultimaInteracao = new Date().toISOString()
-            saveEstadoCliente(from, estado)
-        
-            console.log(`👤 Atendimento humano assumiu ${from.split('@')[0]}`)
-            return
-        }
-
         if (podeMarcarComoLida(estado)) {
             await marcarComoLida(sock, msg)
         }
@@ -687,7 +676,6 @@ async function startBot() {
 
         if (texto === 'ENCERRAR' || texto === 'FINALIZAR') {
             estado.etapa = 'inicio'
-            delete estado.atendimentoHumano
             saveEstadoCliente(from, estado)
 
             estatisticas.registrarEnvio()
