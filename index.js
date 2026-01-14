@@ -191,6 +191,21 @@ class GestorEnvio {
             }
             
             const resultado = await this.sock.sendMessage(item.numero, item.conteudo)
+
+            // 🔹 Marca mensagem como enviada pelo BOT
+            const estadoAtual = getEstadoCliente(item.numero)
+            
+            const mensagensBot = estadoAtual.mensagensBot ?? []
+            mensagensBot.push(resultado.key.id)
+            
+            // mantém só as últimas 20 pra não crescer infinito
+            while (mensagensBot.length > 20) mensagensBot.shift()
+            
+            saveEstadoCliente(item.numero, {
+    ...estadoAtual,
+    mensagensBot,
+    ultimaMensagemBot: Date.now()
+})
             
             this.rateLimiter.registrarEnvio(item.numero)
             
@@ -527,35 +542,35 @@ async function startBot() {
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0]
-      if (msg.key.fromMe) {
-            const numero = msg.key.remoteJid
+        const from = msg.key.remoteJid
+
+        // ignora status, broadcast e grupos
+        if (
+            from === 'status@broadcast' ||
+            from.endsWith('@broadcast') ||
+            from.endsWith('@g.us')
+        ) return
         
-            if (
-                numero === 'status@broadcast' ||
-                numero.endsWith('@broadcast') ||
-                numero.endsWith('@g.us')
-            ) return
+        const estado = getEstadoCliente(from)
+
+        if (msg.key.fromMe) {
+
+            const mensagensBot = estado.mensagensBot ?? []
         
-            saveEstadoCliente(numero, {
+            // se o ID da mensagem estiver na lista, foi o BOT
+            if (mensagensBot.includes(msg.key.id)) {
+                return // ignora mensagem automática
+            }
+        
+            // se NÃO estiver na lista → humano assumiu
+            saveEstadoCliente(from, {
+                ...estado,
                 etapa: 'aguardando_atendente',
                 intervencaoHumana: true,
                 ultimaInteracao: new Date().toISOString()
             })
         
-            console.log(`👤 Conversa assumida manualmente: ${numero.split('@')[0]}`)
-            return
-        }
-      
-        if (!msg.message || msg.key.fromMe) return
-
-        const from = msg.key.remoteJid
-
-        // Ignora status, broadcast e grupos
-        if (
-            from === 'status@broadcast' ||
-            from.endsWith('@broadcast') ||
-            from.endsWith('@g.us')
-        ) {
+            console.log(`👤 Intervenção humana detectada: ${from.split('@')[0]}`)
             return
         }
         
@@ -687,14 +702,9 @@ async function startBot() {
             console.log(`⭐ Número na whitelist (ignorado): ${from.split('@')[0]}`)
             return
         }
-
-        const estado = getEstadoCliente(from)
-        if (estado.intervencaoHumana) {
-            console.log(`🛑 Fluxo automático bloqueado por intervenção humana: ${from.split('@')[0]}`)
-            return
-        }
       
         estado.ultimaInteracao = new Date().toISOString()
+        saveEstadoCliente(from, estado)
 
         if (podeMarcarComoLida(estado)) {
             await marcarComoLida(sock, msg)
@@ -706,23 +716,30 @@ async function startBot() {
       }
 
         if (texto === 'MENU') {
-            estado.etapa = 'menu'
-            estado.tentativasResgate = 0
-            estado.resgateEncerrado = false
-            saveEstadoCliente(from, estado)
+    saveEstadoCliente(from, {
+        ...estado,
+        etapa: 'menu',
+        intervencaoHumana: false,
+        tentativasResgate: 0,
+        resgateEncerrado: false,
+        ultimaInteracao: new Date().toISOString()
+    })
 
-            estatisticas.registrarEnvio()
-            return gestorEnvio.enviarMensagem(from, {
-                text: `Como podemos ajudar você hoje? 🤔\n\n` +
-                      `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
-                      `   ↳ Solicite um orçamento personalizado\n\n` +
-                      `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
-                      `   ↳ Consulte o status do seu pedido\n\n` +
-                      `3️⃣ 📋 *VER CATÁLOGO*\n` +
-                      `   ↳ Consulte produtos e valores\n\n` +
-                      `🔢 *Digite o número da opção desejada:*`
-            }, 'menu')
-        }
+    estatisticas.registrarEnvio()
+
+    return gestorEnvio.enviarMensagem(from, {
+        text: `Como podemos ajudar você hoje? 🤔\n\n` +
+              `1️⃣ 📝 *FAZER ORÇAMENTO*\n` +
+              `2️⃣ 📦 *ACOMPANHAR PEDIDO*\n` +
+              `3️⃣ 📋 *VER CATÁLOGO*\n\n` +
+              `🔢 *Digite o número da opção desejada:*`
+    }, 'menu')
+}
+
+        if (estado.intervencaoHumana) {
+    console.log(`🛑 Fluxo automático bloqueado`)
+    return
+}
 
         if (texto === 'ENCERRAR' || texto === 'FINALIZAR') {
             saveEstadoCliente(from, {
